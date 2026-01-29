@@ -38,7 +38,7 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
         // Preload sounds
         const pool = [];
         for (let i = 0; i < 5; i++) {
-            const a = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+            const a = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
             a.volume = 0.6;
             pool.push(a);
         }
