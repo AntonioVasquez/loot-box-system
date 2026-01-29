@@ -20,6 +20,7 @@ export default function Home() {
     description: 'Una colección épica de cajas misteriosas',
     creatorName: 'Creador',
     items: [],
+    removeItemsFromList: true,
     drawnItemIds: [],
     history: [],
     totalOpens: 0,
@@ -36,6 +37,7 @@ export default function Home() {
   const [tempName, setTempName] = useState('');
   const [tempDescription, setTempDescription] = useState('');
   const [tempCreator, setTempCreator] = useState('');
+  const [tempRemoveItems, setTempRemoveItems] = useState(true);
 
   // Update temp state when boxList changes (loaded from storage)
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function Home() {
       setTempName(boxList.name);
       setTempDescription(boxList.description);
       setTempCreator(boxList.creatorName);
+      setTempRemoveItems(boxList.removeItemsFromList ?? true);
     }
   }, [boxList]);
 
@@ -77,6 +80,7 @@ export default function Home() {
       name: tempName,
       description: tempDescription,
       creatorName: tempCreator,
+      removeItemsFromList: tempRemoveItems,
       updatedAt: new Date()
     }));
     setEditingList(false);
@@ -109,6 +113,7 @@ export default function Home() {
         description: 'Una colección épica de cajas misteriosas',
         creatorName: 'Creador',
         items: [],
+        removeItemsFromList: true,
         drawnItemIds: [],
         history: [],
         totalOpens: 0,
@@ -216,6 +221,19 @@ export default function Home() {
                     placeholder="Tu nombre"
                   />
                 </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={tempRemoveItems}
+                      onChange={(e) => setTempRemoveItems(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <span className="ml-3 text-sm font-medium text-gray-300">Eliminar de la lista al salir (Descuento)</span>
+                  </label>
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -288,6 +306,7 @@ export default function Home() {
               totalOpensCount={boxList.totalOpens}
               persistedDrawnIds={boxList.drawnItemIds || []}
               persistedHistory={boxList.history || []}
+              removeItemsFromList={boxList.removeItemsFromList ?? true}
               onUpdateState={handleUpdateLootState}
               onResetState={handleResetLootState}
             />

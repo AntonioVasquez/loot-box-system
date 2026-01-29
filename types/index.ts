@@ -18,6 +18,7 @@ export interface BoxList {
   description: string;
   creatorName: string;
   items: BoxItem[];
+  removeItemsFromList: boolean; // Whether to remove items from the list after being drawn
   drawnItemIds: string[]; // List of IDs that have been opened
   history: BoxItem[]; // Last 10 opened items
   totalOpens: number;

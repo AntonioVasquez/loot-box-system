@@ -14,6 +14,7 @@ interface BoxOpenerProps {
     totalOpensCount?: number;
     persistedDrawnIds: string[];
     persistedHistory: BoxItem[];
+    removeItemsFromList?: boolean;
     onUpdateState: (drawnItemIds: string[], history: BoxItem[]) => void;
     onResetState: () => void;
 }
@@ -25,6 +26,7 @@ export default function BoxOpener({
     totalOpensCount = 0,
     persistedDrawnIds,
     persistedHistory,
+    removeItemsFromList = true,
     onUpdateState,
     onResetState
 }: BoxOpenerProps) {
@@ -136,7 +138,9 @@ export default function BoxOpener({
     };
 
     const drawnIdsSet = new Set(persistedDrawnIds);
-    const availableItems = items.filter(item => !drawnIdsSet.has(item.id));
+    const availableItems = removeItemsFromList
+        ? items.filter(item => !drawnIdsSet.has(item.id))
+        : items;
     const CARD_WIDTH = 200; // Updated for premium look
     const CARD_GAP = 16;
     const WINNER_INDEX = 45; // Fixed winner index
@@ -203,7 +207,9 @@ export default function BoxOpener({
         }, 50);
 
         setTimeout(() => {
-            const newDrawnIds = [...persistedDrawnIds, selectedItem.id];
+            const newDrawnIds = removeItemsFromList
+                ? [...persistedDrawnIds, selectedItem.id]
+                : persistedDrawnIds;
             const newHistory = [selectedItem, ...persistedHistory].slice(0, 10);
 
             setResult(selectedItem);
