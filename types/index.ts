@@ -18,6 +18,8 @@ export interface BoxList {
   description: string;
   creatorName: string;
   items: BoxItem[];
+  drawnItemIds: string[]; // List of IDs that have been opened
+  history: BoxItem[]; // Last 10 opened items
   totalOpens: number;
   createdAt: Date;
   updatedAt: Date;

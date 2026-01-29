@@ -5,23 +5,31 @@ import { BoxItem, RARITY_CONFIG } from '@/types';
 import BoxCard from './BoxCard';
 import { Package, Sparkles, RotateCcw, Triangle, Volume2, VolumeX } from 'lucide-react';
 import Image from 'next/image';
+import confetti from 'canvas-confetti';
 
 interface BoxOpenerProps {
     items: BoxItem[];
     listName: string;
+    persistedDrawnIds: string[];
+    persistedHistory: BoxItem[];
+    onUpdateState: (drawnItemIds: string[], history: BoxItem[]) => void;
+    onResetState: () => void;
 }
 
-export default function BoxOpener({ items, listName }: BoxOpenerProps) {
+export default function BoxOpener({
+    items,
+    listName,
+    persistedDrawnIds,
+    persistedHistory,
+    onUpdateState,
+    onResetState
+}: BoxOpenerProps) {
     const [isOpening, setIsOpening] = useState(false);
     const [result, setResult] = useState<BoxItem | null>(null);
-    const [history, setHistory] = useState<BoxItem[]>([]);
 
     // Roulette State
     const [rouletteItems, setRouletteItems] = useState<BoxItem[]>([]);
     const [isSpinning, setIsSpinning] = useState(false);
-
-    // Track opened items by ID
-    const [drawnIds, setDrawnIds] = useState<Set<string>>(new Set());
 
     // Audio State
     const [isMuted, setIsMuted] = useState(false);
@@ -30,8 +38,6 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
     const revealAudioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        setDrawnIds(new Set());
-        setHistory([]);
         setResult(null);
         setRouletteItems([]);
 
@@ -62,7 +68,71 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
         revealAudioRef.current.play().catch(() => { });
     };
 
-    const availableItems = items.filter(item => !drawnIds.has(item.id));
+    const triggerRarityEffect = (item: BoxItem) => {
+        const rarity = item.rarity;
+
+        if (rarity === 'legendario') {
+            // Fireworks effect
+            const duration = 5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+            const interval: NodeJS.Timeout = setInterval(function () {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                // since particles fall down, start a bit higher than random
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+        } else if (rarity === 'muy-valioso') {
+            // Side bursts
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 },
+                colors: ['#ec4899', '#f472b6', '#ffffff']
+            };
+
+            function fire(particleRatio: number, opts: any) {
+                confetti({
+                    ...defaults,
+                    ...opts,
+                    particleCount: Math.floor(count * particleRatio)
+                });
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        } else if (rarity === 'valioso') {
+            // Purple "pop"
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#8b5cf6', '#a78bfa', '#ffffff']
+            });
+        } else if (rarity === 'medio') {
+            // Subtle blue pop
+            confetti({
+                particleCount: 50,
+                spread: 50,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#60a5fa']
+            });
+        }
+    };
+
+    const drawnIdsSet = new Set(persistedDrawnIds);
+    const availableItems = items.filter(item => !drawnIdsSet.has(item.id));
     const CARD_WIDTH = 180; // px
     const CARD_GAP = 16; // px
     const WINNER_INDEX = 45; // Fixed winner index
@@ -129,17 +199,15 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
         }, 50);
 
         setTimeout(() => {
-            setDrawnIds(prev => {
-                const newSet = new Set(prev);
-                newSet.add(selectedItem.id);
-                return newSet;
-            });
+            const newDrawnIds = [...persistedDrawnIds, selectedItem.id];
+            const newHistory = [selectedItem, ...persistedHistory].slice(0, 10);
 
             setResult(selectedItem);
-            setHistory(prev => [selectedItem, ...prev].slice(0, 10));
+            onUpdateState(newDrawnIds, newHistory);
             setIsOpening(false);
             setIsSpinning(false);
             playReveal();
+            triggerRarityEffect(selectedItem);
         }, 6500);
     };
 
@@ -155,8 +223,7 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
 
     const handleReset = () => {
         if (confirm('¿Reiniciar el juego? Se restaurarán todas las cajas.')) {
-            setDrawnIds(new Set());
-            setHistory([]);
+            onResetState();
             setResult(null);
         }
     };
@@ -167,6 +234,8 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
     const translateTarget = isSpinning
         ? `-${offset}px`
         : '0px';
+
+    const history = persistedHistory;
 
     if (items.length === 0) {
         return (
@@ -298,7 +367,7 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
                     <div className="w-full h-1 bg-gray-700 rounded-full mb-6 overflow-hidden">
                         <div
                             className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
-                            style={{ width: `${(drawnIds.size / items.length) * 100}%` }}
+                            style={{ width: `${(persistedDrawnIds.length / items.length) * 100}%` }}
                         />
                     </div>
 

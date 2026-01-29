@@ -20,6 +20,8 @@ export default function Home() {
     description: 'Una colección épica de cajas misteriosas',
     creatorName: 'Creador',
     items: [],
+    drawnItemIds: [],
+    history: [],
     totalOpens: 0,
     createdAt: new Date(),
     updatedAt: new Date()
@@ -80,6 +82,25 @@ export default function Home() {
     setEditingList(false);
   };
 
+  const handleUpdateLootState = (drawnItemIds: string[], history: BoxItem[]) => {
+    setBoxList((prev: BoxList) => ({
+      ...prev,
+      drawnItemIds,
+      history,
+      totalOpens: prev.totalOpens + 1,
+      updatedAt: new Date()
+    }));
+  };
+
+  const handleResetLootState = () => {
+    setBoxList((prev: BoxList) => ({
+      ...prev,
+      drawnItemIds: [],
+      history: [],
+      updatedAt: new Date()
+    }));
+  };
+
   const handleResetData = () => {
     if (confirm('¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.')) {
       setBoxList({
@@ -88,6 +109,8 @@ export default function Home() {
         description: 'Una colección épica de cajas misteriosas',
         creatorName: 'Creador',
         items: [],
+        drawnItemIds: [],
+        history: [],
         totalOpens: 0,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -258,7 +281,14 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <BoxOpener items={boxList.items} listName={boxList.name} />
+            <BoxOpener
+              items={boxList.items}
+              listName={boxList.name}
+              persistedDrawnIds={boxList.drawnItemIds || []}
+              persistedHistory={boxList.history || []}
+              onUpdateState={handleUpdateLootState}
+              onResetState={handleResetLootState}
+            />
           )}
         </div>
 
