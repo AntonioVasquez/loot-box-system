@@ -25,7 +25,8 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
 
     // Audio State
     const [isMuted, setIsMuted] = useState(false);
-    const tickAudioRef = useRef<HTMLAudioElement | null>(null);
+    const tickAudios = useRef<HTMLAudioElement[]>([]);
+    const nextTick = useRef(0);
     const revealAudioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
@@ -35,19 +36,24 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
         setRouletteItems([]);
 
         // Preload sounds
-        tickAudioRef.current = new Audio('https://raw.githubusercontent.com/vinhnx/CSGO-Case-Opening/master/audio/tick.mp3');
-        tickAudioRef.current.volume = 0.2;
+        const pool = [];
+        for (let i = 0; i < 5; i++) {
+            const a = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+            a.volume = 0.6;
+            pool.push(a);
+        }
+        tickAudios.current = pool;
 
         revealAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
-        revealAudioRef.current.volume = 0.4;
+        revealAudioRef.current.volume = 0.5;
     }, [listName]);
 
     const playTick = () => {
-        if (isMuted || !tickAudioRef.current) return;
-        // Clone and play to allow rapid overlapping sounds
-        const sound = tickAudioRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.2;
+        if (isMuted || tickAudios.current.length === 0) return;
+        const sound = tickAudios.current[nextTick.current];
+        sound.currentTime = 0;
         sound.play().catch(() => { });
+        nextTick.current = (nextTick.current + 1) % tickAudios.current.length;
     };
 
     const playReveal = () => {
@@ -64,6 +70,14 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
 
     const openBox = () => {
         if (availableItems.length === 0 || isOpening) return;
+
+        // "Unlock" sounds for browsers by playing once silently
+        tickAudios.current.forEach(a => {
+            a.play().then(() => {
+                a.pause();
+                a.currentTime = 0;
+            }).catch(() => { });
+        });
 
         setIsOpening(true);
         setResult(null);
@@ -92,21 +106,14 @@ export default function BoxOpener({ items, listName }: BoxOpenerProps) {
             const itemFullWidth = CARD_WIDTH + CARD_GAP;
             const targetOffset = (WINNER_INDEX * itemFullWidth) + (CARD_WIDTH / 2);
 
-            // Cubic-bezier(0.1, 0.9, 0.2, 1) approximation function
-            const getProgress = (t: number) => {
-                // Simplification for the tick sound timing
-                return 1 - Math.pow(1 - t, 4);
-            };
-
             const tickLoop = () => {
-                if (!isOpening) return;
-
                 const now = Date.now();
                 const elapsed = now - startTime;
                 const t = Math.min(elapsed / duration, 1);
 
                 if (t < 1) {
-                    const progress = getProgress(t);
+                    // Quartic ease-out to match cubic-bezier(0.1, 0.9, 0.2, 1) accurately
+                    const progress = 1 - Math.pow(1 - t, 4);
                     const currentPos = progress * targetOffset;
                     const currentIndex = Math.floor(currentPos / itemFullWidth);
 
