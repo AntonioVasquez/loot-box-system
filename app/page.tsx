@@ -284,6 +284,8 @@ export default function Home() {
             <BoxOpener
               items={boxList.items}
               listName={boxList.name}
+              listDescription={boxList.description}
+              totalOpensCount={boxList.totalOpens}
               persistedDrawnIds={boxList.drawnItemIds || []}
               persistedHistory={boxList.history || []}
               onUpdateState={handleUpdateLootState}

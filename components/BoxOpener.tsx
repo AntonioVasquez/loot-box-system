@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { BoxItem, RARITY_CONFIG } from '@/types';
 import BoxCard from './BoxCard';
-import { Package, Sparkles, RotateCcw, Triangle, Volume2, VolumeX } from 'lucide-react';
+import { Package, Sparkles, RotateCcw, Triangle, Volume2, VolumeX, User, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
 
 interface BoxOpenerProps {
     items: BoxItem[];
     listName: string;
+    listDescription?: string;
+    totalOpensCount?: number;
     persistedDrawnIds: string[];
     persistedHistory: BoxItem[];
     onUpdateState: (drawnItemIds: string[], history: BoxItem[]) => void;
@@ -19,6 +21,8 @@ interface BoxOpenerProps {
 export default function BoxOpener({
     items,
     listName,
+    listDescription,
+    totalOpensCount = 0,
     persistedDrawnIds,
     persistedHistory,
     onUpdateState,
@@ -133,8 +137,8 @@ export default function BoxOpener({
 
     const drawnIdsSet = new Set(persistedDrawnIds);
     const availableItems = items.filter(item => !drawnIdsSet.has(item.id));
-    const CARD_WIDTH = 180; // px
-    const CARD_GAP = 16; // px
+    const CARD_WIDTH = 200; // Updated for premium look
+    const CARD_GAP = 16;
     const WINNER_INDEX = 45; // Fixed winner index
     const TOTAL_ITEMS = 60;
 
@@ -248,154 +252,202 @@ export default function BoxOpener({
     }
 
     return (
-        <div className="space-y-8">
-            <div className="glass-card p-1 relative overflow-hidden">
-                {/* Header */}
-                <div className="text-center p-6 relative z-10">
-                    <div className="absolute right-6 top-6 flex items-center gap-2">
+        <div className="space-y-8 animate-in fade-in duration-700 w-full">
+            <div className="w-full flex flex-col items-center">
+                {/* Header Section */}
+                <div className="text-center mb-10 w-full relative">
+                    <div className="absolute right-0 top-0 flex items-center gap-2">
                         <button
                             onClick={() => setIsMuted(!isMuted)}
-                            className="p-2 text-gray-400 hover:text-white transition-colors"
+                            className="p-3 glass-card text-gray-400 hover:text-white transition-all rounded-xl"
                             title={isMuted ? "Activar Sonido" : "Silenciar"}
                         >
                             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                         </button>
                         <button
                             onClick={handleReset}
-                            className="p-2 text-gray-400 hover:text-white transition-colors"
+                            className="p-3 glass-card text-gray-400 hover:text-white transition-all rounded-xl"
                             title="Reiniciar Juego"
                         >
                             <RotateCcw size={20} />
                         </button>
                     </div>
 
-                    <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                    <p className="text-indigo-500 font-bold tracking-[0.2em] text-xs mb-3 uppercase">
+                        {isOpening ? "Abriendo..." : "Listo para abrir"}
+                    </p>
+                    <h2 className="text-5xl md:text-6xl font-black mb-4 text-white tracking-tight">
                         {listName}
                     </h2>
-                    <p className="text-gray-400">
-                        {availableItems.length} restantes / {items.length} total
+                    <p className="max-w-xl mx-auto text-gray-400 text-lg leading-relaxed">
+                        {listDescription || `Consigue objetos legendarios. ¡Buena suerte!`}
                     </p>
                 </div>
 
-                {/* CS:GO Roulette Area */}
-                <div className="relative h-64 bg-black/40 border-y border-indigo-500/30 overflow-hidden mb-8">
-                    {/* Background Grid/Effect */}
-                    <div className="absolute inset-0 opacity-20"
-                        style={{ backgroundImage: 'radial-gradient(circle at center, #6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-                    />
+                {/* Main Opening Area */}
+                <div className="w-full relative mb-12">
+                    {/* Focus Area Highlight (Static Background layer) */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20">
+                        <div className="w-[210px] h-[300px] border-2 border-indigo-500 rounded-2xl shadow-[0_0_40px_rgba(99,102,241,0.4)] relative">
+                            {/* Focus Label */}
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 px-3 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                                <span className="text-[10px] font-black text-white uppercase tracking-wider whitespace-nowrap">Área de Enfoque</span>
+                            </div>
 
-                    {/* Center Marker Line */}
-                    <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-amber-400 z-30 shadow-[0_0_10px_rgba(251,191,36,0.8)]">
-                        <div className="absolute top-0 -translate-x-1/2 text-amber-400 fill-current">
-                            <Triangle className="rotate-180" size={24} fill="currentColor" />
-                        </div>
-                        <div className="absolute bottom-0 -translate-x-1/2 text-amber-400 fill-current">
-                            <Triangle size={24} fill="currentColor" />
-                        </div>
-                    </div>
-
-                    {/* Roulette Track */}
-                    {isOpening ? (
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 flex items-center will-change-transform"
-                            style={{
-                                left: '50%', // Start at center
-                                transform: `translateX(${translateTarget})`,
-                                transition: isSpinning ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none',
-                                gap: `${CARD_GAP}px`,
-                            }}
-                        >
-                            {rouletteItems.map((item, idx) => {
-                                const rarity = RARITY_CONFIG[item.rarity];
-                                return (
-                                    <div
-                                        key={idx}
-                                        className="relative shrink-0 bg-gray-900 border-2 rounded-lg flex flex-col items-center justify-center overflow-hidden"
-                                        style={{
-                                            width: `${CARD_WIDTH}px`,
-                                            height: `${CARD_WIDTH}px`,
-                                            borderColor: rarity.color,
-                                            boxShadow: idx === WINNER_INDEX && !isSpinning
-                                                ? `0 0 20px ${rarity.glowColor}`
-                                                : undefined
-                                        }}
-                                    >
-                                        <div
-                                            className="absolute inset-x-0 bottom-0 h-1/2 opacity-20"
-                                            style={{ background: `linear-gradient(to top, ${rarity.color}, transparent)` }}
-                                        />
-
-                                        {item.identifierType === 'imagen' && item.imageUrl ? (
-                                            <div className="relative w-24 h-24 mb-2 z-10">
-                                                <Image src={item.imageUrl} alt="item" fill className="object-contain" />
-                                            </div>
-                                        ) : (
-                                            <span
-                                                className="text-4xl font-bold z-10"
-                                                style={{ color: rarity.color }}
-                                            >
-                                                {item.identifier}
-                                            </span>
-                                        )}
-
-                                        <span className="text-xs text-gray-400 z-10 uppercase tracking-wider font-semibold mt-2">
-                                            {rarity.label}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : result ? (
-                        /* Winner Display Static */
-                        <div className="flex items-center justify-center h-full">
-                            <div className="scale-125">
-                                <BoxCard item={result} isResult={true} />
+                            {/* Bottom indicator icon */}
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-indigo-600 p-2 rounded-full shadow-lg border border-indigo-400">
+                                <Triangle className="text-white" size={12} fill="currentColor" />
                             </div>
                         </div>
-                    ) : (
-                        /* Idle State */
-                        <div className="flex items-center justify-center h-full text-gray-500 gap-2">
-                            <Package size={24} />
-                            <span>Presiona Abrir</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Controls */}
-                <div className="p-6">
-                    {/* Progress Bar */}
-                    <div className="w-full h-1 bg-gray-700 rounded-full mb-6 overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
-                            style={{ width: `${(persistedDrawnIds.length / items.length) * 100}%` }}
-                        />
                     </div>
 
-                    {/* Open Button */}
+                    {/* Roulette Overflow Container */}
+                    <div className="relative h-[400px] flex items-center justify-center overflow-hidden bg-[#0a0a0c] border border-white/5 rounded-3xl">
+                        {/* Shimmer/Overlay effects */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0c] via-transparent to-[#0a0a0c] z-10 pointer-events-none" />
+
+                        {/* Grids/Glows */}
+                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#4f46e5 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+
+                        {/* Roulette Track */}
+                        {isOpening ? (
+                            <div
+                                className="absolute top-1/2 -translate-y-1/2 flex items-center will-change-transform z-0"
+                                style={{
+                                    left: '50%',
+                                    transform: `translateX(${translateTarget})`,
+                                    transition: isSpinning ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none',
+                                    gap: `${CARD_GAP}px`,
+                                }}
+                            >
+                                {rouletteItems.map((item, idx) => {
+                                    const rarity = RARITY_CONFIG[item.rarity];
+                                    const isCenter = idx === WINNER_INDEX;
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className="relative shrink-0 bg-gray-950/80 border border-white/10 rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all duration-300"
+                                            style={{
+                                                width: `${CARD_WIDTH}px`,
+                                                height: `${CARD_WIDTH + 100}px`,
+                                                boxShadow: isCenter && !isSpinning ? `0 0 50px ${rarity.glowColor}` : undefined,
+                                                borderColor: isCenter && !isSpinning ? rarity.color : 'rgba(255,255,255,0.1)'
+                                            }}
+                                        >
+                                            <div
+                                                className="absolute inset-x-0 bottom-0 h-1/2 opacity-20"
+                                                style={{ background: `linear-gradient(to top, ${rarity.color}, transparent)` }}
+                                            />
+
+                                            {item.identifierType === 'imagen' && item.imageUrl ? (
+                                                <div className="relative w-28 h-28 mb-4 z-10 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                                                    <Image src={item.imageUrl} alt="item" fill className="object-contain" />
+                                                </div>
+                                            ) : (
+                                                <div className="p-6 bg-gradient-to-br from-white/10 to-transparent rounded-2xl mb-4 z-10 border border-white/5 animate-float">
+                                                    <span className="text-5xl font-black" style={{ color: rarity.color }}>
+                                                        {item.identifier}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="text-center z-10">
+                                                <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wide">
+                                                    {item.identifierType === 'imagen' ? item.identifier : `Objeto ${item.identifier}`}
+                                                </h4>
+                                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: rarity.color }}>
+                                                    {rarity.label}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : result ? (
+                            /* Winner Display Static - High visibility */
+                            <div className="relative z-30 flex items-center justify-center animate-in zoom-in-75 duration-500">
+                                <BoxCard item={result} isResult={true} />
+                            </div>
+                        ) : (
+                            /* Idle State */
+                            <div className="flex flex-col items-center justify-center text-gray-500 gap-4">
+                                <div className="p-8 rounded-full bg-white/5 border border-white/10 animate-bounce">
+                                    <Package size={48} className="text-indigo-400" />
+                                </div>
+                                <span className="text-xl font-bold tracking-widest uppercase">Listo para abrir</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Control Panel */}
+                <div className="w-full flex flex-col items-center">
+                    {/* Main Open Button */}
                     {!isGameOver && (
-                        <button
-                            onClick={openBox}
-                            disabled={isOpening}
-                            className="btn-primary w-full py-4 text-lg font-bold flex items-center justify-center gap-3 relative overflow-hidden group"
-                        >
-                            {isOpening ? (
-                                <span className="animate-pulse">Girando...</span>
-                            ) : (
-                                <>
-                                    <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                    <Package size={24} />
-                                    Abrir Caja ({availableItems.length})
-                                </>
-                            )}
-                        </button>
+                        <div className="relative group w-full max-w-sm mb-8">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                            <button
+                                onClick={openBox}
+                                disabled={isOpening}
+                                className="relative w-full bg-[#5849ff] hover:bg-[#4a3cf0] text-white py-6 rounded-2xl text-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl"
+                            >
+                                {isOpening ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                                        GIRANDO...
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Sparkles size={24} />
+                                        ABRIR CAJA
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     )}
 
                     {isGameOver && (
-                        <div className="text-center">
-                            <p className="text-amber-400 font-bold text-xl mb-4">¡Juego Terminado!</p>
-                            <button onClick={handleReset} className="btn-secondary">Reiniciar Todo</button>
+                        <div className="text-center py-4 mb-8">
+                            <h3 className="text-red-400 font-black text-2xl mb-4 uppercase tracking-widest italic animate-pulse">Inventario Agotado</h3>
+                            <button onClick={handleReset} className="btn-secondary px-10 py-4 text-sm font-bold tracking-widest">REABASTECER CAJA</button>
                         </div>
                     )}
+
+                    {/* Rarity Legend */}
+                    <div className="flex flex-wrap justify-center gap-6 mb-12">
+                        {Object.entries(RARITY_CONFIG).reverse().map(([key, config]) => (
+                            <div key={key} className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: config.color, color: config.color }} />
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    {config.label} <span className="text-gray-500 ml-1 opacity-50">{config.defaultPercentage}%</span>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer Stats Row */}
+                    <div className="w-full flex justify-between items-end border-t border-white/5 pt-10">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Aperturas Totales</p>
+                            <p className="text-3xl font-black text-white">{totalOpensCount.toLocaleString()}</p>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="p-3 glass-card rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer">
+                                <User size={20} />
+                            </div>
+                            <div className="p-3 glass-card rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer">
+                                <Calendar size={20} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1 text-right">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Objetos Restantes</p>
+                            <p className="text-3xl font-black text-indigo-400 tracking-tighter">
+                                {availableItems.length}<span className="text-gray-600 text-lg ml-1">/ {items.length}</span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

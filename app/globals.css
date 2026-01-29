@@ -11,9 +11,9 @@
 
 :root {
   /* Color Palette - Premium Dark Theme */
-  --bg-primary: #0a0e27;
-  --bg-secondary: #151932;
-  --bg-tertiary: #1e2442;
+  --bg-primary: #050508;
+  --bg-secondary: #0a0a0c;
+  --bg-tertiary: #111114;
   --bg-card: rgba(30, 36, 66, 0.6);
 
   /* Rarity Colors */
