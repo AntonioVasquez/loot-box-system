@@ -41,32 +41,32 @@ export const RARITY_CONFIG: Record<RarityType, {
 }> = {
   'basico': {
     label: 'Básico',
-    color: '#6b7280',
-    glowColor: 'rgba(107, 114, 128, 0.5)',
+    color: '#94a3b8',
+    glowColor: 'rgba(148, 163, 184, 0.4)',
     defaultPercentage: 50
   },
   'medio': {
     label: 'Medio',
-    color: '#3b82f6',
-    glowColor: 'rgba(59, 130, 246, 0.5)',
+    color: '#0ea5e9',
+    glowColor: 'rgba(14, 165, 233, 0.4)',
     defaultPercentage: 30
   },
   'valioso': {
     label: 'Valioso',
-    color: '#8b5cf6',
-    glowColor: 'rgba(139, 92, 246, 0.5)',
+    color: '#a855f7',
+    glowColor: 'rgba(168, 85, 247, 0.4)',
     defaultPercentage: 15
   },
   'muy-valioso': {
     label: 'Muy Valioso',
-    color: '#ec4899',
-    glowColor: 'rgba(236, 72, 153, 0.5)',
+    color: '#f43f5e',
+    glowColor: 'rgba(244, 63, 94, 0.4)',
     defaultPercentage: 4
   },
   'legendario': {
     label: 'Legendario',
-    color: '#f59e0b',
-    glowColor: 'rgba(245, 158, 11, 0.5)',
+    color: '#eab308',
+    glowColor: 'rgba(234, 179, 8, 0.5)',
     defaultPercentage: 1
   }
 };

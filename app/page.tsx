@@ -6,7 +6,6 @@ import AddBoxForm from '@/components/AddBoxForm';
 import BoxCard from '@/components/BoxCard';
 import BoxOpener from '@/components/BoxOpener';
 import ListHeader from '@/components/ListHeader';
-import { Boxes, Edit3, Eye, Save, RotateCcw } from 'lucide-react';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 export default function Home() {
@@ -132,97 +131,80 @@ export default function Home() {
   };
 
   if (!isMounted) {
-    return <div className="min-h-screen flex items-center justify-center text-white">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-white font-display">Cargando...</div>;
   }
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center justify-start p-4 md:p-8">
-      <div className="w-full max-w-7xl flex flex-col min-h-[95vh]">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Boxes className="text-indigo-500" size={40} />
-            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              Loot Box System
-            </h1>
-          </div>
-          <p className="text-gray-400 text-lg">
-            Crea y abre cajas misteriosas con rareza personalizada
-          </p>
+    <>
+      <header className="pt-8 pb-4 text-center relative z-10 w-full">
+        <div className="flex justify-center mb-2">
+          <span className="material-icons-outlined text-5xl text-primary animate-pulse" style={{ fontSize: '48px' }}>
+            deployed_code
+          </span>
         </div>
-
-        {/* Mode Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="glass-card p-2 inline-flex gap-2">
-            <button
-              onClick={() => setMode('create')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${mode === 'create'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white'
-                }`}
-            >
-              <Edit3 size={20} />
-              Crear Cajas
-            </button>
-            <button
-              onClick={() => setMode('play')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${mode === 'play'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white'
-                }`}
-            >
-              <Eye size={20} />
-              Abrir Cajas
-            </button>
-          </div>
+        <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-2 filter drop-shadow-lg">
+          Loot Box System
+        </h1>
+        <p className="text-gray-400 text-lg mb-6 tracking-wide px-4">
+          Crea y abre cajas misteriosas con rareza personalizada
+        </p>
+        <div className="inline-flex bg-gray-200 dark:bg-gray-800/80 p-1 rounded-full border border-gray-300 dark:border-gray-700 shadow-inner">
+          <button
+            onClick={() => setMode('create')}
+            className={`flex items-center space-x-2 px-6 py-2 rounded-full transition-all ${mode === 'create'
+              ? 'bg-primary text-white shadow-neon-purple font-bold tracking-wider'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            <span className="material-icons-outlined text-sm">edit</span>
+            <span>Crear Cajas</span>
+          </button>
+          <button
+            onClick={() => setMode('play')}
+            className={`flex items-center space-x-2 px-6 py-2 rounded-full transition-all ${mode === 'play'
+              ? 'bg-primary text-white shadow-neon-purple font-bold tracking-wider'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            <span className="material-icons-outlined text-sm">visibility</span>
+            <span>Abrir Cajas</span>
+          </button>
         </div>
+      </header>
 
-        {/* List Header with Edit */}
-        <div className="mb-8">
-          {editingList ? (
-            <div className="glass-card p-8">
-              <h2 className="text-2xl font-bold mb-6 text-white">Editar Información de la Lista</h2>
-              <div className="space-y-4 mb-6">
+      <main className="flex-grow container mx-auto px-4 pb-12 max-w-7xl pt-8">
+        {editingList ? (
+          <div className="glass-panel rounded-xl p-8 mb-8 border-primary/30">
+            <h2 className="text-2xl font-display font-bold mb-6 text-white text-glow">Editar Información de la Lista</h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-wider">
                     Nombre de la Lista
                   </label>
                   <input
                     type="text"
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
-                    className="input-field"
+                    className="input-field w-full"
                     placeholder="Mi Lista de Cajas"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    value={tempDescription}
-                    onChange={(e) => setTempDescription(e.target.value)}
-                    className="input-field resize-none"
-                    rows={3}
-                    placeholder="Describe tu lista de cajas..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-wider">
                     Nombre del Creador
                   </label>
                   <input
                     type="text"
                     value={tempCreator}
                     onChange={(e) => setTempCreator(e.target.value)}
-                    className="input-field"
+                    className="input-field w-full"
                     placeholder="Tu nombre"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center space-x-3 pt-2">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -230,36 +212,53 @@ export default function Home() {
                       checked={tempRemoveItems}
                       onChange={(e) => setTempRemoveItems(e.target.checked)}
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                    <span className="ml-3 text-sm font-medium text-gray-300">Eliminar de la lista al salir (Descuento)</span>
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
+                  <span className="text-sm font-medium text-gray-300">Eliminar de la lista al salir (Descuento)</span>
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <button onClick={handleSaveListInfo} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                  <Save size={20} />
-                  Guardar
-                </button>
-                <button onClick={handleCancelEdit} className="btn-secondary flex-1">
-                  Cancelar
-                </button>
+              <div>
+                <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-wider">
+                  Descripción
+                </label>
+                <textarea
+                  value={tempDescription}
+                  onChange={(e) => setTempDescription(e.target.value)}
+                  className="input-field w-full h-[155px] resize-none"
+                  placeholder="Describe tu lista de cajas..."
+                />
               </div>
             </div>
-          ) : (
-            <ListHeader
-              list={boxList}
-              onEdit={() => setEditingList(true)}
-            />
-          )}
-        </div>
 
-        {/* Content based on mode */}
-        <div className="flex-grow">
+            <div className="flex gap-4">
+              <button
+                onClick={handleSaveListInfo}
+                className="flex-1 btn-neon bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center space-x-2"
+              >
+                <span className="material-icons-outlined">save</span>
+                <span className="uppercase tracking-wider">Guardar</span>
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+              >
+                <span className="material-icons-outlined text-sm">close</span>
+                <span className="uppercase tracking-wider">Cancelar</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ListHeader
+            list={boxList}
+            onEdit={() => setEditingList(true)}
+          />
+        )}
+
+        <div className="mt-6 flex-grow">
           {mode === 'create' ? (
-            <div className="grid lg:grid-cols-3 gap-8 md:gap-12">
-              {/* Add Box Form */}
-              <div className="lg:col-span-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-4">
                 <AddBoxForm
                   onAdd={handleAddBox}
                   currentCount={boxList.items.length}
@@ -267,35 +266,33 @@ export default function Home() {
                 />
               </div>
 
-              {/* Box Grid */}
-              <div className="lg:col-span-2">
-                <div className="glass-card p-6 h-full">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">
-                      Cajas Creadas ({boxList.items.length}/{MAX_BOXES})
-                    </h2>
-                  </div>
-
-                  {boxList.items.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Boxes className="mx-auto mb-4 text-gray-600" size={64} />
-                      <p className="text-gray-500">
-                        No hay cajas aún. ¡Crea tu primera caja!
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {boxList.items.map((item) => (
-                        <BoxCard
-                          key={item.id}
-                          item={item}
-                          onDelete={handleDeleteBox}
-                          showDelete={true}
-                        />
-                      ))}
-                    </div>
-                  )}
+              <div className="lg:col-span-8 glass-panel rounded-xl p-6 min-h-[500px] flex flex-col relative overflow-hidden">
+                <div className="flex justify-between items-center mb-6 relative z-10">
+                  <h3 className="text-xl font-display font-bold text-white text-glow">
+                    Cajas Creadas ({boxList.items.length}/{MAX_BOXES})
+                  </h3>
                 </div>
+
+                {boxList.items.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-gray-500 relative z-10">
+                    <span className="material-icons-outlined text-6xl mb-4 opacity-30">deployed_code</span>
+                    <p className="text-lg font-display">No hay cajas aún. ¡Crea tu primera caja!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-2 max-h-[600px] custom-scrollbar relative z-10">
+                    {boxList.items.map((item) => (
+                      <BoxCard
+                        key={item.id}
+                        item={item}
+                        onDelete={handleDeleteBox}
+                        showDelete={true}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Background Decor */}
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl"></div>
               </div>
             </div>
           ) : (
@@ -312,21 +309,20 @@ export default function Home() {
             />
           )}
         </div>
+      </main>
 
-        {/* Footer */}
-        <footer className="mt-16 border-t border-white/10 pt-8 text-center pb-8">
-          <p className="text-gray-600 text-sm mb-4">
-            &copy; 2026 Loot Box System
-          </p>
-          <button
+      <footer className="text-center py-8 text-sm text-gray-500 border-t border-white/5 w-full">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+          <div
             onClick={handleResetData}
-            className="text-xs text-red-500/50 hover:text-red-400 transition-colors flex items-center justify-center gap-2 mx-auto"
+            className="flex items-center space-x-2 mb-4 md:mb-0 text-red-500 cursor-pointer hover:text-red-400 transition-colors group"
           >
-            <RotateCcw size={12} />
-            Borrar todos los datos y reiniciar
-          </button>
-        </footer>
-      </div>
-    </main>
+            <span className="material-icons-outlined text-sm group-hover:rotate-180 transition-transform duration-500">replay</span>
+            <span className="font-medium">Borrar todos los datos y reiniciar</span>
+          </div>
+          <span className="font-mono opacity-50">© 2026 Loot Box System | Designed for Gamers</span>
+        </div>
+      </footer>
+    </>
   );
 }
