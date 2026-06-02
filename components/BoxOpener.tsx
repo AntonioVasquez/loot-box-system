@@ -344,44 +344,39 @@ export default function BoxOpener({
                         <div className="relative flex flex-col items-center mb-12 w-full max-w-sm">
                             {/* Epic open button */}
                             <div className="relative group w-full">
-                                {/* Outer spinning conic ring */}
+                                {/* Glow halo — pulsa suavemente, sin girar */}
                                 <div
-                                    className={`absolute -inset-[3px] rounded-2xl z-0 ${isOpening ? '' : 'animate-ring-spin'}`}
+                                    className="absolute -inset-[1px] rounded-2xl z-0 animate-glow pointer-events-none"
                                     style={{
-                                        background: isOpening
-                                            ? 'linear-gradient(135deg, #a855f7, #3b82f6)'
-                                            : 'conic-gradient(from 0deg, #a855f7, #3b82f6, #ec4899, #eab308, #a855f7)',
-                                        filter: 'blur(3px)',
-                                        opacity: isOpening ? 0.6 : 0.55,
-                                        transition: 'opacity 0.3s',
+                                        background: 'linear-gradient(135deg, #a855f7, #3b82f6)',
+                                        opacity: 0.5,
+                                        filter: 'blur(8px)',
                                     }}
                                 />
-                                {/* Hover: intensify the ring */}
+                                {/* Hover: intensifica el glow */}
                                 <div
-                                    className="absolute -inset-[3px] rounded-2xl z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-ring-spin"
+                                    className="absolute -inset-[2px] rounded-2xl z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                                     style={{
-                                        background: 'conic-gradient(from 180deg, #a855f7, #3b82f6, #ec4899, #eab308, #a855f7)',
-                                        filter: 'blur(6px)',
+                                        background: 'linear-gradient(135deg, #a855f7, #ec4899, #3b82f6)',
+                                        filter: 'blur(10px)',
                                     }}
                                 />
                                 <button
                                     onClick={openBox}
                                     disabled={isOpening}
-                                    className="relative z-10 w-full bg-background-dark text-white py-6 rounded-2xl text-xl font-display font-bold uppercase tracking-[0.22em] flex items-center justify-center gap-4 shadow-2xl disabled:opacity-60 transition-all duration-300 hover:bg-surface-dark overflow-hidden"
+                                    className="relative z-10 w-full bg-background-dark border border-primary/40 group-hover:border-primary/80 text-white py-6 rounded-2xl text-xl font-display font-bold uppercase tracking-[0.22em] flex items-center justify-center gap-4 shadow-2xl disabled:opacity-60 transition-all duration-300 hover:bg-surface-dark overflow-hidden"
                                 >
-                                    {/* Internal shimmer on hover */}
-                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                                        style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%)' }}
-                                    />
+                                    {/* Shimmer sweep interno al hacer hover */}
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none card-holo-sweep" />
                                     {isOpening ? (
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 border-[3px] border-white/20 border-t-primary rounded-full animate-spin" />
-                                            <span className="text-gray-300">GIRANDO...</span>
+                                            <span className="text-gray-300 tracking-widest">GIRANDO...</span>
                                         </div>
                                     ) : (
                                         <>
                                             <span className="material-icons-outlined text-2xl text-primary group-hover:scale-125 transition-transform duration-300">auto_awesome</span>
-                                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-white to-secondary group-hover:from-white group-hover:via-primary group-hover:to-white transition-all duration-500">
+                                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-white to-secondary">
                                                 ABRIR CAJA
                                             </span>
                                         </>

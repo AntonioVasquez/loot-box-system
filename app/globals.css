@@ -151,11 +151,7 @@
   50%       { transform: scale(1.1) translateY(-6px); }
 }
 
-/* Rotating ring for the open button */
-@keyframes ring-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
+/* (ring-spin eliminado — reemplazado por glow pulse más limpio) */
 
 /* Utility classes */
 .card-holo-sweep {
@@ -188,31 +184,4 @@
   animation: result-float 2.5s ease-in-out infinite;
 }
 
-.animate-ring-spin {
-  animation: ring-spin 3s linear infinite;
-}
-
-/* Conic gradient ring for epic open button */
-.btn-epic-ring::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from 0deg,
-    #a855f7,
-    #3b82f6,
-    #ec4899,
-    #a855f7
-  );
-  animation: ring-spin 3s linear infinite;
-  z-index: -1;
-  filter: blur(4px);
-  opacity: 0.7;
-  transition: opacity 0.3s;
-}
-
-.btn-epic-ring:hover::before {
-  opacity: 1;
-  filter: blur(6px);
-}
+/* (clases de ring eliminadas) */
