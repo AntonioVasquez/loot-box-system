@@ -122,3 +122,97 @@
 .box-reveal {
   animation: box-reveal 1s ease-out forwards;
 }
+
+/* ─── Premium Card Animations ─────────────────────────────────────── */
+
+/* Holographic sweep — slides a white-ish sheen across the card */
+@keyframes holo-sweep {
+  0%   { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(220%)  skewX(-15deg); opacity: 0; }
+}
+
+/* Subtle shimmer for the top accent bar */
+@keyframes bar-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Pulsing border glow for legendario */
+@keyframes border-pulse-gold {
+  0%, 100% { box-shadow: 0 0 12px #eab30840, 0 0 24px #eab30820, inset 0 0 12px #eab30808; }
+  50%       { box-shadow: 0 0 28px #eab30880, 0 0 56px #eab30840, inset 0 0 20px #eab30818; }
+}
+
+/* Subtle float for result card */
+@keyframes result-float {
+  0%, 100% { transform: scale(1.1) translateY(0); }
+  50%       { transform: scale(1.1) translateY(-6px); }
+}
+
+/* Rotating ring for the open button */
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Utility classes */
+.card-holo-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255,255,255,0.04) 35%,
+    rgba(255,255,255,0.10) 45%,
+    rgba(255,255,255,0.14) 50%,
+    rgba(255,255,255,0.10) 55%,
+    rgba(255,255,255,0.04) 65%,
+    transparent 80%
+  );
+  animation: holo-sweep 2.4s ease-in-out infinite;
+}
+
+.bar-shimmer {
+  background-size: 200% auto;
+  animation: bar-shimmer 2.5s linear infinite;
+}
+
+.border-pulse-gold {
+  animation: border-pulse-gold 2.2s ease-in-out infinite;
+}
+
+.animate-result-float {
+  animation: result-float 2.5s ease-in-out infinite;
+}
+
+.animate-ring-spin {
+  animation: ring-spin 3s linear infinite;
+}
+
+/* Conic gradient ring for epic open button */
+.btn-epic-ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    #a855f7,
+    #3b82f6,
+    #ec4899,
+    #a855f7
+  );
+  animation: ring-spin 3s linear infinite;
+  z-index: -1;
+  filter: blur(4px);
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.btn-epic-ring:hover::before {
+  opacity: 1;
+  filter: blur(6px);
+}

@@ -341,50 +341,132 @@ export default function BoxOpener({
                 {/* Action Area */}
                 <div className="w-full flex flex-col items-center">
                     {!isGameOver ? (
-                        <div className="relative group w-full max-w-sm mb-12">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                            <button
-                                onClick={openBox}
-                                disabled={isOpening}
-                                className="relative w-full btn-neon bg-background-dark border border-primary/50 hover:border-primary text-white py-6 rounded-2xl text-xl font-display font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-2xl disabled:opacity-50"
-                            >
-                                {isOpening ? (
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                                        GIRANDO...
-                                    </div>
-                                ) : (
-                                    <>
-                                        <span className="material-icons-outlined text-2xl">auto_awesome</span>
-                                        ABRIR CAJA
-                                    </>
-                                )}
-                            </button>
+                        <div className="relative flex flex-col items-center mb-12 w-full max-w-sm">
+                            {/* Epic open button */}
+                            <div className="relative group w-full">
+                                {/* Outer spinning conic ring */}
+                                <div
+                                    className={`absolute -inset-[3px] rounded-2xl z-0 ${isOpening ? '' : 'animate-ring-spin'}`}
+                                    style={{
+                                        background: isOpening
+                                            ? 'linear-gradient(135deg, #a855f7, #3b82f6)'
+                                            : 'conic-gradient(from 0deg, #a855f7, #3b82f6, #ec4899, #eab308, #a855f7)',
+                                        filter: 'blur(3px)',
+                                        opacity: isOpening ? 0.6 : 0.55,
+                                        transition: 'opacity 0.3s',
+                                    }}
+                                />
+                                {/* Hover: intensify the ring */}
+                                <div
+                                    className="absolute -inset-[3px] rounded-2xl z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-ring-spin"
+                                    style={{
+                                        background: 'conic-gradient(from 180deg, #a855f7, #3b82f6, #ec4899, #eab308, #a855f7)',
+                                        filter: 'blur(6px)',
+                                    }}
+                                />
+                                <button
+                                    onClick={openBox}
+                                    disabled={isOpening}
+                                    className="relative z-10 w-full bg-background-dark text-white py-6 rounded-2xl text-xl font-display font-bold uppercase tracking-[0.22em] flex items-center justify-center gap-4 shadow-2xl disabled:opacity-60 transition-all duration-300 hover:bg-surface-dark overflow-hidden"
+                                >
+                                    {/* Internal shimmer on hover */}
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                        style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%)' }}
+                                    />
+                                    {isOpening ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 border-[3px] border-white/20 border-t-primary rounded-full animate-spin" />
+                                            <span className="text-gray-300">GIRANDO...</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="material-icons-outlined text-2xl text-primary group-hover:scale-125 transition-transform duration-300">auto_awesome</span>
+                                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-white to-secondary group-hover:from-white group-hover:via-primary group-hover:to-white transition-all duration-500">
+                                                ABRIR CAJA
+                                            </span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Subtle hint text */}
+                            {!isOpening && (
+                                <p className="text-[10px] text-gray-600 uppercase tracking-[0.2em] mt-3 font-mono">
+                                    {availableItems.length} ítem{availableItems.length !== 1 ? 's' : ''} disponible{availableItems.length !== 1 ? 's' : ''}
+                                </p>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-4 mb-12">
-                            <h3 className="text-accent font-display font-bold text-2xl mb-4 uppercase tracking-widest italic animate-pulse">Inventario Agotado</h3>
-                            <button onClick={handleReset} className="btn-neon bg-white/5 hover:bg-white/10 border border-white/20 px-10 py-4 text-sm font-bold tracking-widest rounded-xl uppercase">REABASTECER CAJA</button>
+                            <div className="mb-6 flex justify-center">
+                                <div className="p-4 rounded-full border border-accent/30 bg-accent/5">
+                                    <span className="material-icons-outlined text-4xl text-accent">inventory_2</span>
+                                </div>
+                            </div>
+                            <h3 className="text-accent font-display font-bold text-2xl mb-2 uppercase tracking-widest">Inventario Agotado</h3>
+                            <p className="text-gray-500 text-sm mb-6">Todos los objetos han sido extraídos</p>
+                            <button
+                                onClick={handleReset}
+                                className="btn-neon relative border border-white/20 px-10 py-4 text-sm font-bold tracking-widest rounded-xl uppercase text-gray-300 hover:text-white hover:border-primary/50 transition-all overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                <span className="relative">REABASTECER CAJA</span>
+                            </button>
                         </div>
                     )}
 
-                    {/* Stats Footer */}
-                    <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-6 pt-10 border-t border-white/5">
-                        <div className="glass-panel p-4 rounded-xl text-center">
-                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Aperturas Totales</p>
+                    {/* Stats Footer — gaming HUD style */}
+                    <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-4 pt-10 border-t border-white/5">
+                        {/* Stat: Total opens */}
+                        <div className="relative glass-panel p-4 rounded-xl text-center overflow-hidden group hover:border-white/20 transition-colors">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.05), transparent 70%)' }}
+                            />
+                            <div className="text-[9px] font-mono text-gray-600 uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1">
+                                <span className="material-icons-outlined text-[10px] text-gray-600">auto_awesome</span>
+                                Aperturas
+                            </div>
                             <p className="text-2xl font-display font-bold text-white">{totalOpensCount.toLocaleString()}</p>
                         </div>
-                        <div className="glass-panel p-4 rounded-xl text-center">
-                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Objetos Disponibles</p>
+                        {/* Stat: Available */}
+                        <div className="relative glass-panel p-4 rounded-xl text-center overflow-hidden group hover:border-white/20 transition-colors">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.05), transparent 70%)' }}
+                            />
+                            <div className="text-[9px] font-mono text-gray-600 uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1">
+                                <span className="material-icons-outlined text-[10px] text-gray-600">inventory</span>
+                                Disponibles
+                            </div>
                             <p className="text-2xl font-display font-bold text-secondary">{availableItems.length}</p>
                         </div>
-                        <div className="glass-panel p-4 rounded-xl text-center">
-                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Objetos Restantes</p>
-                            <p className="text-2xl font-display font-bold text-primary">{availableItems.length} / {items.length}</p>
+                        {/* Stat: Remaining */}
+                        <div className="relative glass-panel p-4 rounded-xl text-center overflow-hidden group hover:border-white/20 transition-colors">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.05), transparent 70%)' }}
+                            />
+                            <div className="text-[9px] font-mono text-gray-600 uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1">
+                                <span className="material-icons-outlined text-[10px] text-gray-600">pie_chart</span>
+                                Restantes
+                            </div>
+                            <div className="flex items-end justify-center gap-1">
+                                <p className="text-2xl font-display font-bold text-primary">{availableItems.length}</p>
+                                <p className="text-xs text-gray-600 mb-0.5 font-mono">/ {items.length}</p>
+                            </div>
                         </div>
-                        <div className="glass-panel p-4 rounded-xl text-center">
-                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Modo Retirada</p>
-                            <p className="text-2xl font-display font-bold text-accent">{removeItemsFromList ? 'ACTIVO' : 'INACTIVO'}</p>
+                        {/* Stat: Discard mode */}
+                        <div className="relative glass-panel p-4 rounded-xl text-center overflow-hidden group hover:border-white/20 transition-colors">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(236,72,153,0.05), transparent 70%)' }}
+                            />
+                            <div className="text-[9px] font-mono text-gray-600 uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1">
+                                <span className="material-icons-outlined text-[10px] text-gray-600">shuffle</span>
+                                Modo
+                            </div>
+                            <div className="flex items-center justify-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${removeItemsFromList ? 'bg-green-400' : 'bg-gray-600'}`}
+                                    style={removeItemsFromList ? { boxShadow: '0 0 6px #4ade80' } : {}} />
+                                <p className="text-sm font-display font-bold text-accent">{removeItemsFromList ? 'DESCUENTO' : 'INFINITO'}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
