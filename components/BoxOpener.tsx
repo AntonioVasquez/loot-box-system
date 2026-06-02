@@ -5,7 +5,7 @@ import { BoxItem, RARITY_CONFIG } from '@/types';
 import BoxCard from './BoxCard';
 import HudPanel from './HudPanel';
 import Image from 'next/image';
-import confetti from 'canvas-confetti';
+import { triggerEpicEffect } from '@/utils/epicEffect';
 
 interface BoxOpenerProps {
   items: BoxItem[];
@@ -59,27 +59,7 @@ export default function BoxOpener({
   };
 
   const triggerRarityEffect = (item: BoxItem) => {
-    const r = item.rarity;
-    if (r === 'legendario') {
-      const end = Date.now() + 5000;
-      const defs = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-      const rand = (a: number, b: number) => Math.random() * (b - a) + a;
-      const iv = setInterval(() => {
-        const t = end - Date.now(); if (t <= 0) return clearInterval(iv);
-        const pc = 50 * (t / 5000);
-        confetti({ ...defs, particleCount: pc, origin: { x: rand(0.1, 0.3), y: Math.random() - 0.2 } });
-        confetti({ ...defs, particleCount: pc, origin: { x: rand(0.7, 0.9), y: Math.random() - 0.2 } });
-      }, 250);
-    } else if (r === 'muy-valioso') {
-      const fire = (ratio: number, opts: object) =>
-        confetti({ origin: { y: 0.7 }, colors: ['#ec4899','#f472b6','#ffffff'], particleCount: Math.floor(200 * ratio), ...opts });
-      fire(0.25, { spread: 26, startVelocity: 55 }); fire(0.2, { spread: 60 });
-      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 }); fire(0.1, { spread: 120, startVelocity: 45 });
-    } else if (r === 'valioso') {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#8b5cf6','#a78bfa','#ffffff'] });
-    } else if (r === 'medio') {
-      confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 }, colors: ['#3b82f6','#60a5fa'] });
-    }
+    triggerEpicEffect(item.rarity);
   };
 
   const drawnSet = new Set(persistedDrawnIds);

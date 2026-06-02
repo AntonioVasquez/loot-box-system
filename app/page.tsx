@@ -7,6 +7,7 @@ import BoxCard from '@/components/BoxCard';
 import BoxOpener from '@/components/BoxOpener';
 import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
+import MatrixBackground from '@/components/MatrixBackground';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 export default function Home() {
@@ -98,6 +99,9 @@ export default function Home() {
 
   return (
     <>
+      {/* ── Matrix Background ───────────────────────────────────── */}
+      <MatrixBackground />
+
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="pt-10 pb-6 text-center relative z-10 w-full">
 
