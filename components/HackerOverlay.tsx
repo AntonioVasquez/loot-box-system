@@ -473,7 +473,7 @@ export default function HackerOverlay() {
     }, 800 + Math.random() * 1200);
 
     return () => clearTimeout(timer);
-  }, [terminalLines, isDanger];
+  }, [terminalLines, isDanger]);
 
   return (
     <>
