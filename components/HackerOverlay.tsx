@@ -118,6 +118,126 @@ function drawGlitchBars(
   ctx.globalAlpha = 1;
 }
 
+/* ── Epic matrix dissolution effect ────────────────────────── */
+function drawMatrixDissolution(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+  transitionPhase: number, // 0 = fade-in start, 1 = middle, 2 = fade-out end
+) {
+  // Only during transitions (first 15% and last 25%)
+  const isTransition = transitionPhase < 0.15 || transitionPhase > 0.75;
+  if (!isTransition) return;
+
+  // Calculate transition intensity
+  let intensity = 0;
+  if (transitionPhase < 0.15) {
+    // Fade-in: letras pixelizándose en la imagen
+    intensity = (0.15 - transitionPhase) / 0.15;
+  } else {
+    // Fade-out: imagen dissolviéndose en letras
+    intensity = (transitionPhase - 0.75) / 0.25;
+  }
+
+  const pixelSize = Math.max(2, 12 * intensity);
+  
+  // Draw pixelated matrix rain with intense glow during transitions
+  const pixelCount = Math.floor(intensity * 200);
+  for (let i = 0; i < pixelCount; i++) {
+    const x = Math.random() * vw;
+    const y = Math.random() * vh;
+    const char = HACKER_CHARS[Math.floor(Math.random() * HACKER_CHARS.length)];
+    
+    const colors = [
+      `rgba(6,182,212,${0.8 * masterOpacity})`,
+      `rgba(168,85,247,${0.7 * masterOpacity})`,
+      `rgba(59,130,246,${0.75 * masterOpacity})`,
+      `rgba(255,255,255,${0.6 * masterOpacity})`,
+    ];
+    
+    ctx.globalAlpha = intensity * masterOpacity * 0.9;
+    ctx.font = `bold ${pixelSize + 4}px "Courier New", monospace`;
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    ctx.shadowBlur = 20 * intensity;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.fillText(char, x, y);
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ── Intense glitch lines during transitions ──────────────── */
+function drawTransitionGlitch(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+  transitionPhase: number,
+) {
+  const isTransition = transitionPhase < 0.15 || transitionPhase > 0.75;
+  if (!isTransition) return;
+
+  let intensity = 0;
+  if (transitionPhase < 0.15) {
+    intensity = (0.15 - transitionPhase) / 0.15;
+  } else {
+    intensity = (transitionPhase - 0.75) / 0.25;
+  }
+
+  // Intense horizontal glitch lines
+  const lineCount = Math.floor(intensity * 15);
+  for (let i = 0; i < lineCount; i++) {
+    const y = Math.random() * vh;
+    const h = 1 + Math.random() * 3;
+    const opacity = Math.random() * intensity * masterOpacity;
+    
+    const gradient = ctx.createLinearGradient(0, y, vw, y);
+    gradient.addColorStop(0, `rgba(6,182,212,0)`);
+    gradient.addColorStop(0.2, `rgba(6,182,212,${opacity})`);
+    gradient.addColorStop(0.5, `rgba(168,85,247,${opacity * 0.8})`);
+    gradient.addColorStop(0.8, `rgba(6,182,212,${opacity})`);
+    gradient.addColorStop(1, `rgba(6,182,212,0)`);
+    
+    ctx.fillStyle = gradient;
+    ctx.globalAlpha = 1;
+    ctx.fillRect(0, y, vw, h);
+  }
+}
+
+/* ── Pulsing light burst during transitions ────────────────── */
+function drawLightBurst(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+  transitionPhase: number,
+) {
+  const isTransition = transitionPhase < 0.15 || transitionPhase > 0.75;
+  if (!isTransition) return;
+
+  let intensity = 0;
+  if (transitionPhase < 0.15) {
+    intensity = (0.15 - transitionPhase) / 0.15;
+  } else {
+    intensity = (transitionPhase - 0.75) / 0.25;
+  }
+
+  // Radial light burst from center
+  const centerX = vw / 2;
+  const centerY = vh / 2;
+  const maxRadius = Math.sqrt(vw * vw + vh * vh) / 2;
+  
+  const burstGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius);
+  burstGradient.addColorStop(0, `rgba(168,85,247,${intensity * masterOpacity * 0.6})`);
+  burstGradient.addColorStop(0.3, `rgba(6,182,212,${intensity * masterOpacity * 0.3})`);
+  burstGradient.addColorStop(1, `rgba(59,130,246,0)`);
+  
+  ctx.fillStyle = burstGradient;
+  ctx.globalAlpha = 1;
+  ctx.fillRect(0, 0, vw, vh);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    COMPONENT
    ═══════════════════════════════════════════════════════════════ */
@@ -165,7 +285,18 @@ export default function HackerOverlay() {
       /* Draw effects layers */
       drawCodeRain(ctx, vw, vh, masterOpacity);
       drawScanlines(ctx, vw, vh, masterOpacity);
-      drawGlitchBars(ctx, vw, vh, masterOpacity, elapsed);
+      
+      // Intense glitch during transitions
+      const isTransitioning = t < 0.15 || t > 0.75;
+      const glitchIntensity = isTransitioning ? 0.6 : 0.15;
+      if (Math.random() > (1 - glitchIntensity)) {
+        drawGlitchBars(ctx, vw, vh, masterOpacity, elapsed);
+      }
+      
+      /* Epic transition effects */
+      drawLightBurst(ctx, vw, vh, masterOpacity, t);
+      drawTransitionGlitch(ctx, vw, vh, masterOpacity, t);
+      drawMatrixDissolution(ctx, vw, vh, masterOpacity, t);
 
       if (t < 1) {
         animId = requestAnimationFrame(animate);
