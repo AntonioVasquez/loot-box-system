@@ -241,50 +241,83 @@
 /* ══════════════════════════════════════════════════════════════════
    SYSTEM TEXT GLITCH  — applied randomly by GlitchTextSystem.tsx
    Simulates connection loss / signal corruption / reconnection
+   Duraciones largas para que el efecto sea VISIBLE y notable.
    ══════════════════════════════════════════════════════════════════ */
 
-/* Light glitch — brief jitter + color shift + blink */
+/*
+  LIGHT glitch  —  0.87 s
+  Jitter → desconexión breve → color shift → vuelta
+*/
 @keyframes sys-glitch-light {
-  0%   { transform: none;                           filter: none;                         opacity: 1; }
-  7%   { transform: translateX(-4px) skewX(-3deg);  filter: brightness(3) saturate(4);    opacity: 0.85; }
-  10%  { transform: translateX(5px);                filter: none;                         opacity: 0.07; }
-  12%  { transform: translateX(-2px) skewX(2deg);   filter: brightness(2) hue-rotate(155deg); opacity: 1; }
-  18%  { transform: none;                           filter: none;                         opacity: 1; }
-  24%  { transform: translateX(3px) skewX(-1.5deg); filter: hue-rotate(80deg) brightness(1.8); }
-  27%  { transform: none;                           opacity: 0;                           }
-  29%  { transform: none;                           filter: none;                         opacity: 1; }
-  100% { transform: none;                           filter: none;                         opacity: 1; }
+  0%   { transform: none;                            filter: none;                              opacity: 1;   }
+
+  /* Primer hit */
+  6%   { transform: translateX(-5px) skewX(-4deg);   filter: brightness(3.5) saturate(5);       opacity: 0.9; }
+  9%   { transform: translateX(7px)  skewX(2deg);    filter: none;                              opacity: 0.05;}
+  11%  { transform: translateX(-3px);                filter: brightness(2.5) hue-rotate(160deg); opacity: 1;   }
+  14%  { transform: none;                            filter: none;                              opacity: 1;   }
+
+  /* Señal estabilizándose (pausa) */
+  28%  { transform: none;                            filter: none;                              opacity: 1;   }
+
+  /* Segundo hit */
+  32%  { transform: translateX(6px)  skewX(-3deg);   filter: hue-rotate(85deg) brightness(2.5); opacity: 0.8; }
+  35%  { transform: translateX(-4px);                filter: none;                              opacity: 0.0; }
+  37%  { transform: none;                            filter: brightness(1.8);                   opacity: 1;   }
+
+  /* Último flicker antes de recuperarse */
+  55%  { transform: none;                            filter: none;                              opacity: 1;   }
+  58%  { transform: translateX(2px)  skewX(1deg);    filter: brightness(2) saturate(3);         opacity: 0.7; }
+  61%  { transform: none;                            filter: none;                              opacity: 0.0; }
+  63%  { transform: none;                            filter: none;                              opacity: 1;   }
+
+  100% { transform: none;                            filter: none;                              opacity: 1;   }
 }
 
-/* Heavy glitch — double corruption + longer blackout */
+/*
+  HEAVY glitch  —  1.45 s
+  Triple corrupción + dos cortes negros + color caótico + recuperación lenta
+*/
 @keyframes sys-glitch-heavy {
-  0%   { transform: none;                           filter: none;                         opacity: 1; }
-  4%   { transform: translateX(-8px) skewX(-6deg);  filter: brightness(5) saturate(5) hue-rotate(15deg); }
-  7%   { transform: translateX(9px);                filter: none;                         opacity: 0; }
-  9%   { transform: translateX(-4px);               filter: brightness(4);                opacity: 1; }
-  14%  { transform: none;                           filter: none;                         opacity: 1; }
-  19%  { transform: translateX(7px) skewX(5deg);    filter: hue-rotate(200deg) brightness(3); }
-  22%  { transform: none;                           opacity: 0;                           }
-  24%  { transform: none;                           opacity: 1;                           filter: none; }
-  32%  { transform: translateX(-5px) skewX(-3deg);  filter: brightness(3) saturate(3);   }
-  35%  { transform: none;                           opacity: 0;                           }
-  37%  { transform: none;                           opacity: 1;                           filter: none; }
-  46%  { transform: translateX(3px);                filter: brightness(1.6) hue-rotate(90deg); }
-  50%  { transform: none;                           filter: none;                         opacity: 1; }
-  100% { transform: none;                           filter: none;                         opacity: 1; }
+  0%   { transform: none;                             filter: none;                               opacity: 1;   }
+
+  /* Hit 1 — fuerte */
+  4%   { transform: translateX(-10px) skewX(-7deg);   filter: brightness(6) saturate(6) hue-rotate(20deg); opacity: 1; }
+  7%   { transform: translateX(12px);                 filter: none;                               opacity: 0;   }
+  9%   { transform: translateX(-5px)  skewX(3deg);    filter: brightness(5);                      opacity: 1;   }
+  12%  { transform: none;                             filter: none;                               opacity: 1;   }
+
+  /* Pausa corta — tensión */
+  18%  { transform: none;                             filter: none;                               opacity: 1;   }
+
+  /* Hit 2 — con color shift total */
+  22%  { transform: translateX(9px)   skewX(-5deg);   filter: hue-rotate(210deg) brightness(4) saturate(4); opacity: 0.9; }
+  25%  { transform: none;                             filter: none;                               opacity: 0;   }
+  28%  { transform: translateX(-6px);                 filter: brightness(3.5) hue-rotate(300deg); opacity: 1;   }
+  31%  { transform: none;                             filter: none;                               opacity: 1;   }
+
+  /* Señal cortada — negro largo */
+  36%  { opacity: 0;                                  filter: none;   transform: none; }
+  42%  { opacity: 1;                                  filter: brightness(2.5);  transform: translateX(3px); }
+  45%  { transform: none;                             filter: none;                               opacity: 1;   }
+
+  /* Hit 3 — más suave, sistema volviendo */
+  52%  { transform: translateX(-4px) skewX(-2deg);    filter: brightness(2) saturate(3);          opacity: 0.8; }
+  55%  { transform: translateX(5px);                  filter: none;                               opacity: 0.1; }
+  58%  { transform: none;                             filter: brightness(1.8);                    opacity: 1;   }
+
+  /* Último micro-glitch antes de estabilizar */
+  70%  { transform: none;                             filter: none;                               opacity: 1;   }
+  72%  { transform: translateX(-2px) skewX(-1deg);    filter: brightness(1.5) hue-rotate(60deg);  opacity: 0.9; }
+  74%  { transform: none;                             filter: none;                               opacity: 0;   }
+  76%  { transform: none;                             filter: none;                               opacity: 1;   }
+
+  100% { transform: none;                             filter: none;                               opacity: 1;   }
 }
 
-/* Scan line sweep — a horizontal line that crosses the viewport */
-@keyframes sys-scan-sweep {
-  0%   { transform: translateY(-4px);  opacity: 0; }
-  3%   { opacity: 1; }
-  97%  { opacity: 1; }
-  100% { transform: translateY(100vh); opacity: 0; }
-}
-
-/* Applied by JS */
-.sys-glitch       { animation: sys-glitch-light 0.30s steps(1, end) forwards !important; }
-.sys-glitch-heavy { animation: sys-glitch-heavy 0.52s steps(1, end) forwards !important; }
+/* Applied by JS — !important to override existing element animations briefly */
+.sys-glitch       { animation: sys-glitch-light 0.87s steps(1, end) forwards !important; }
+.sys-glitch-heavy { animation: sys-glitch-heavy 1.45s steps(1, end) forwards !important; }
 
 /* ── Neon flicker ────────────────────────────────────────────────── */
 @keyframes neon-flicker {
