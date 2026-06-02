@@ -263,6 +263,31 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* ── Delete warning pulse — used by modal icon & glow ───────────── */
+@keyframes delete-warning-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* ── Card destroy — glitch disintegration ───────────────────────── */
+@keyframes card-destroy {
+  0%   { transform: scale(1)    skewX(0deg)   rotate(0deg);   opacity: 1;   filter: brightness(1)   blur(0px);  }
+  6%   { transform: scale(1.07) skewX(6deg)   rotate(0.6deg); opacity: 1;   filter: brightness(5)   saturate(4) blur(0px); }
+  12%  { transform: scale(0.95) skewX(-8deg)  rotate(-1.8deg);opacity: 1;   filter: brightness(9)   hue-rotate(25deg); }
+  18%  { transform: scale(1.05) skewX(5deg)   rotate(1.2deg); opacity: 1;   filter: brightness(5)   saturate(2); }
+  26%  { transform: scale(0.93) skewX(-3deg)  rotate(-0.6deg);opacity: 0.9; filter: brightness(2.5) blur(1px); }
+  38%  { transform: scale(0.82) rotate(2.5deg);                opacity: 0.75;filter: brightness(1.8) blur(2px); }
+  55%  { transform: scale(0.58) rotate(-4deg);                 opacity: 0.45;filter: brightness(1)   blur(5px); }
+  72%  { transform: scale(0.32) rotate(7deg);                  opacity: 0.18;filter: brightness(0.5) blur(9px); }
+  88%  { transform: scale(0.1)  rotate(-12deg);                opacity: 0.04;filter: blur(15px); }
+  100% { transform: scale(0)    rotate(18deg);                  opacity: 0;   filter: blur(22px); }
+}
+
+.card-destroy {
+  animation: card-destroy 0.75s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  pointer-events: none;
+}
+
 /* ── Card materialise — orb impact (epic insertion) ─────────────── */
 @keyframes card-materialize {
   0%   {

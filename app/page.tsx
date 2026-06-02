@@ -9,6 +9,8 @@ import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
 import MatrixBackground from '@/components/MatrixBackground';
 import { launchOrb } from '@/utils/orbEffect';
+import { triggerDestruction } from '@/utils/destroyEffect';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 type PendingOrb = { targetId: string; rarity: RarityType; buttonRect: DOMRect };
@@ -33,11 +35,15 @@ export default function Home() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // ── Orb animation state ─────────────────────────────────────────
+  // ── Orb / spawn animation state ─────────────────────────────────
   const [hiddenItemId,  setHiddenItemId]  = useState<string | null>(null);
   const [materializeId, setMaterializeId] = useState<string | null>(null);
   const [pendingOrb,    setPendingOrb]    = useState<PendingOrb | null>(null);
   const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Delete confirmation + destroy animation state ────────────────
+  const [confirmDelete, setConfirmDelete] = useState<BoxItem | null>(null);
+  const [destroyingId,  setDestroyingId]  = useState<string | null>(null);
 
   /**
    * Runs AFTER the DOM has painted the new card (useEffect = post-render).
@@ -121,8 +127,29 @@ export default function Home() {
     }
   };
 
-  const handleDeleteBox = (id: string) =>
-    setBoxList((prev: BoxList) => ({ ...prev, items: prev.items.filter((item: BoxItem) => item.id !== id), updatedAt: new Date() }));
+  /** Step 1 — show confirmation modal */
+  const handleDeleteBox = (id: string) => {
+    const item = boxList.items.find((i: BoxItem) => i.id === id);
+    if (item) setConfirmDelete(item);
+  };
+
+  /** Step 2 — user confirmed: CSS destroy + canvas FX + remove after animation */
+  const executeDeleteBox = (item: BoxItem) => {
+    setConfirmDelete(null);
+    setDestroyingId(item.id);
+
+    const cardEl = document.querySelector<HTMLElement>(`[data-item-id="${item.id}"]`);
+    if (cardEl) triggerDestruction(cardEl.getBoundingClientRect(), item.rarity);
+
+    setTimeout(() => {
+      setDestroyingId(null);
+      setBoxList((prev: BoxList) => ({
+        ...prev,
+        items: prev.items.filter((i: BoxItem) => i.id !== item.id),
+        updatedAt: new Date(),
+      }));
+    }, 780);   // matches card-destroy animation duration
+  };
 
   const handleSaveListInfo = () => {
     setBoxList((prev: BoxList) => ({
@@ -359,6 +386,7 @@ export default function Home() {
                           className={
                             hiddenItemId  === item.id ? 'opacity-0 scale-0 pointer-events-none' :
                             materializeId === item.id ? 'card-materialize' :
+                            destroyingId  === item.id ? 'card-destroy' :
                             'transition-transform duration-200'
                           }
                         >
@@ -385,6 +413,15 @@ export default function Home() {
           )}
         </div>
       </main>
+
+      {/* ── Delete confirmation modal ──────────────────────────── */}
+      {confirmDelete && (
+        <DeleteConfirmModal
+          item={confirmDelete}
+          onConfirm={() => executeDeleteBox(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer className="py-6 border-t border-white/4 w-full relative">
