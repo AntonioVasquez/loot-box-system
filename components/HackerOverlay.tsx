@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /* ── Matrix symbols that fall around the hacker ──────────────── */
 const HACKER_CHARS = '01▓░▒█◆◇⌬⌭⊕⊗■□ABCDEFabcdef0x{}[]<>/\\'.split('');
+const DANGER_WORDS = ['⚠ PELIGRO ⚠', '⚠ DANGER ⚠', 'ALERTA', 'ALERT', '🚨 INTRUSO 🚨'];
 
 interface CodeRain {
   x: number; y: number;
@@ -27,7 +28,16 @@ interface CodeRain {
   color: string;
 }
 
+interface WarningText {
+  x: number; y: number;
+  text: string;
+  life: number;
+  decay: number;
+  opacity: number;
+}
+
 const codeRainList: CodeRain[] = [];
+const warningTexts: WarningText[] = [];
 
 
 function drawCodeRain(
@@ -35,17 +45,21 @@ function drawCodeRain(
   vw:            number,
   vh:            number,
   masterOpacity: number,
+  isDanger:      boolean = false,
 ) {
   // Spawn new rain
-  if (Math.random() < 0.35 && codeRainList.length < 120) {
+  if (Math.random() < 0.35 && codeRainList.length < (isDanger ? 180 : 120)) {
+    const dangerColors = ['rgba(255,50,50,0.7)', 'rgba(255,100,0,0.6)', 'rgba(255,200,0,0.65)'];
+    const normalColors = ['rgba(6,182,212,0.5)', 'rgba(168,85,247,0.4)', 'rgba(59,130,246,0.45)'];
+    
     codeRainList.push({
       x:     Math.random() * vw,
       y:     -20,
-      speed: 0.8 + Math.random() * 1.2,
+      speed: isDanger ? (1.2 + Math.random() * 1.8) : (0.8 + Math.random() * 1.2),
       char:  HACKER_CHARS[Math.floor(Math.random() * HACKER_CHARS.length)],
-      color: ['rgba(6,182,212,0.5)', 'rgba(168,85,247,0.4)', 'rgba(59,130,246,0.45)'][
-        Math.floor(Math.random() * 3)
-      ],
+      color: isDanger 
+        ? dangerColors[Math.floor(Math.random() * dangerColors.length)]
+        : normalColors[Math.floor(Math.random() * normalColors.length)],
     });
   }
 
@@ -62,7 +76,7 @@ function drawCodeRain(
     ctx.globalAlpha = masterOpacity * 0.6;
     ctx.font        = '12px "Courier New", monospace';
     ctx.fillStyle   = r.color;
-    ctx.shadowBlur  = 6;
+    ctx.shadowBlur  = isDanger ? 12 : 6;
     ctx.shadowColor = r.color;
     ctx.fillText(r.char, r.x, r.y);
     ctx.shadowBlur  = 0;
@@ -70,15 +84,89 @@ function drawCodeRain(
   ctx.globalAlpha = 1;
 }
 
-/* ── Draw scanlines overlay ────────────────────────────────── */
+/* ── Draw danger warning text ──────────────────────────────── */
+function drawDangerWarnings(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+  isDanger:      boolean,
+) {
+  if (!isDanger) return;
+
+  // Spawn new warning texts
+  if (Math.random() < 0.15 && warningTexts.length < 8) {
+    warningTexts.push({
+      x:     Math.random() * vw * 0.8 + vw * 0.1,
+      y:     Math.random() * vh,
+      text:  DANGER_WORDS[Math.floor(Math.random() * DANGER_WORDS.length)],
+      life:  1,
+      decay: 0.008 + Math.random() * 0.012,
+      opacity: 1,
+    });
+  }
+
+  // Draw and update warning texts
+  for (let i = warningTexts.length - 1; i >= 0; i--) {
+    const w = warningTexts[i];
+    w.life -= w.decay;
+    
+    if (w.life <= 0) {
+      warningTexts.splice(i, 1);
+      continue;
+    }
+
+    // Pulsing opacity effect
+    const pulse = 0.5 + 0.5 * Math.sin(w.life * Math.PI * 3);
+    const displayOpacity = w.life * pulse * masterOpacity;
+
+    ctx.globalAlpha = displayOpacity;
+    ctx.font = 'bold 28px "Courier New", monospace';
+    ctx.fillStyle = `rgba(255,50,50,${displayOpacity})`;
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = `rgba(255,50,50,${displayOpacity})`;
+    ctx.textAlign = 'center';
+    
+    // Slight glitch movement
+    const glitchX = (Math.random() - 0.5) * 8;
+    const glitchY = (Math.random() - 0.5) * 8;
+    
+    ctx.fillText(w.text, w.x + glitchX, w.y + glitchY);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'left';
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ── Draw danger overlay tint ──────────────────────────────── */
+function drawDangerOverlay(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+  isDanger:      boolean,
+  time:          number,
+) {
+  if (!isDanger) return;
+
+  // Pulsing red tint
+  const pulseIntensity = 0.15 + 0.1 * Math.sin(time * 0.003);
+  ctx.globalAlpha = pulseIntensity * masterOpacity;
+  ctx.fillStyle = '#ff3232';
+  ctx.fillRect(0, 0, vw, vh);
+  ctx.globalAlpha = 1;
+}
+
+
 function drawScanlines(
   ctx:           CanvasRenderingContext2D,
   vw:            number,
   vh:            number,
   masterOpacity: number,
+  isDanger:      boolean = false,
 ) {
-  ctx.globalAlpha = masterOpacity * 0.12;
-  ctx.fillStyle   = '#000';
+  ctx.globalAlpha = masterOpacity * (isDanger ? 0.18 : 0.12);
+  ctx.fillStyle   = isDanger ? 'rgba(255,50,50,0.3)' : '#000';
   for (let ly = 0; ly < vh; ly += 4) {
     ctx.fillRect(0, ly, vw, 2);
   }
@@ -282,13 +370,17 @@ export default function HackerOverlay() {
 
       ctx.clearRect(0, 0, vw, vh);
 
+      /* Determine if in danger mode (active presentation time) */
+      const isDanger = t >= 0.15 && t <= 0.75;
+
       /* Draw effects layers */
-      drawCodeRain(ctx, vw, vh, masterOpacity);
-      drawScanlines(ctx, vw, vh, masterOpacity);
+      drawCodeRain(ctx, vw, vh, masterOpacity, isDanger);
+      drawScanlines(ctx, vw, vh, masterOpacity, isDanger);
+      drawDangerOverlay(ctx, vw, vh, masterOpacity, isDanger, elapsed);
       
       // Intense glitch during transitions
       const isTransitioning = t < 0.15 || t > 0.75;
-      const glitchIntensity = isTransitioning ? 0.6 : 0.15;
+      const glitchIntensity = isTransitioning ? 0.6 : (isDanger ? 0.25 : 0.15);
       if (Math.random() > (1 - glitchIntensity)) {
         drawGlitchBars(ctx, vw, vh, masterOpacity, elapsed);
       }
@@ -297,12 +389,16 @@ export default function HackerOverlay() {
       drawLightBurst(ctx, vw, vh, masterOpacity, t);
       drawTransitionGlitch(ctx, vw, vh, masterOpacity, t);
       drawMatrixDissolution(ctx, vw, vh, masterOpacity, t);
+      
+      /* Danger warning text */
+      drawDangerWarnings(ctx, vw, vh, masterOpacity, isDanger);
 
       if (t < 1) {
         animId = requestAnimationFrame(animate);
       } else {
         running = false;
         codeRainList.length = 0;
+        warningTexts.length = 0;
         ctx.clearRect(0, 0, vw, vh);
         setIsVisible(false);
         setOpacity(0);
@@ -314,6 +410,7 @@ export default function HackerOverlay() {
       running   = true;
       startTime = performance.now();
       codeRainList.length = 0;
+      warningTexts.length = 0;
       setIsVisible(true);
       cancelAnimationFrame(animId);
       animId = requestAnimationFrame(animate);
