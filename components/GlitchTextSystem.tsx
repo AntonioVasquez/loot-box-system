@@ -38,6 +38,16 @@ function isSafe(el: HTMLElement): boolean {
   return true;
 }
 
+/**
+ * Pure-numeric / counter elements (e.g. "5", "5/10", "25%", "1,234")
+ * change dynamically via React state.  Scrambling them breaks React's
+ * internal text-node reference, causing stale/wrong values to persist.
+ * Only apply CSS glitch on these — never textNode scramble.
+ */
+function isSafeToScramble(text: string): boolean {
+  return !/^[\d\s,./:%]+$/.test(text.trim());
+}
+
 function getCandidates(): HTMLElement[] {
   return Array.from(document.querySelectorAll<HTMLElement>(QUERY)).filter(isSafe);
 }
@@ -47,9 +57,21 @@ function getCandidates(): HTMLElement[] {
    Phase 1  (0–25%)   : todos los chars se corrompen rápido
    Phase 2  (25–65%)  : HOLD roto  —  sigue fluctuando
    Phase 3  (65–100%) : recuperación progresiva izq → der
+
+   ⚠ CRÍTICO: usamos `textNode.nodeValue` en lugar de `el.textContent`.
+   `el.textContent = ...` destruye el nodo de texto y crea uno nuevo,
+   invalidando la referencia interna de React → React no puede actualizar
+   contadores dinámicos después.  `textNode.nodeValue` solo cambia el
+   valor sin tocar el nodo → React sigue funcionando correctamente.
    ───────────────────────────────────────────────────────────────── */
 function scramble(el: HTMLElement, totalMs: number) {
-  const original = el.textContent ?? '';
+  // Buscar el nodo de texto que React gestiona (preserva su referencia)
+  const textNode = Array.from(el.childNodes).find(
+    n => n.nodeType === Node.TEXT_NODE && (n as Text).nodeValue?.trim(),
+  ) as Text | undefined;
+  if (!textNode) return;
+
+  const original = textNode.nodeValue ?? '';
   if (!original.trim()) return;
 
   const PHASE1_END = 0.25;
@@ -59,63 +81,53 @@ function scramble(el: HTMLElement, totalMs: number) {
   let raf = 0;
   let running = true;
 
+  const corrupt = (ch: string) => {
+    if (ch === ' ' || ch === '\n' || ch === ':' || ch === '%') return ch;
+    const pool = /\d/.test(ch) ? POOL_HEX : POOL_ALL;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   const tick = (now: number) => {
     if (!running) return;
     const p = Math.min((now - t0) / totalMs, 1);
 
     if (p < PHASE1_END) {
-      // Phase 1: rápida entrada de corrupción
-      const corruptRatio = p / PHASE1_END;       // 0→1
-      el.textContent = original
-        .split('')
-        .map(ch => {
-          if (ch === ' ' || ch === '\n' || ch === ':' || ch === '%') return ch;
-          if (Math.random() > corruptRatio) return ch;  // algunos chars aún se ven
-          const pool = /\d/.test(ch) ? POOL_HEX : POOL_ALL;
-          return pool[Math.floor(Math.random() * pool.length)];
-        })
-        .join('');
+      // Phase 1: entrada rápida de corrupción
+      const corruptRatio = p / PHASE1_END;
+      textNode.nodeValue = original
+        .split('').map(ch => (Math.random() > corruptRatio ? ch : corrupt(ch))).join('');
 
     } else if (p < PHASE2_END) {
-      // Phase 2: HOLD — todos corruptos, siguen cambiando (parpadeo máximo)
-      el.textContent = original
-        .split('')
-        .map(ch => {
-          if (ch === ' ' || ch === '\n' || ch === ':' || ch === '%') return ch;
-          const pool = /\d/.test(ch) ? POOL_HEX : POOL_ALL;
-          return pool[Math.floor(Math.random() * pool.length)];
-        })
-        .join('');
+      // Phase 2: HOLD — todos corruptos, fluctuando
+      textNode.nodeValue = original.split('').map(corrupt).join('');
 
     } else {
       // Phase 3: recuperación izq→der
-      const restoreP = (p - PHASE2_END) / (1 - PHASE2_END);  // 0→1
-      const pivot    = Math.floor(restoreP * original.length);
-      el.textContent = original
-        .split('')
-        .map((ch, i) => {
-          if (ch === ' ' || ch === '\n' || ch === ':' || ch === '%') return ch;
-          if (i < pivot) return ch;
-          const pool = /\d/.test(ch) ? POOL_HEX : POOL_ALL;
-          return pool[Math.floor(Math.random() * pool.length)];
-        })
-        .join('');
+      const pivot = Math.floor(((p - PHASE2_END) / (1 - PHASE2_END)) * original.length);
+      textNode.nodeValue = original
+        .split('').map((ch, i) => (i < pivot ? ch : corrupt(ch))).join('');
     }
 
     if (p < 1) {
       raf = requestAnimationFrame(tick);
     } else {
-      el.textContent = original;   // garantía de restauración
+      textNode.nodeValue = original;
     }
   };
 
   raf = requestAnimationFrame(tick);
 
-  // Safety restore
+  // Safety: solo restaurar si el nodo sigue conteniendo chars de scramble
+  // (si React lo actualizó a un nuevo valor no lo pisamos)
   setTimeout(() => {
     running = false;
     cancelAnimationFrame(raf);
-    el.textContent = original;
+    const cur = textNode.nodeValue ?? '';
+    const isStillScrambled = POOL_SYM.split('').some(ch => cur.includes(ch));
+    if (isStillScrambled || cur === original) {
+      textNode.nodeValue = original;
+    }
+    // Si no tiene chars de scramble y es distinto de original → React lo actualizó → no tocar
   }, totalMs + 150);
 }
 
@@ -184,12 +196,14 @@ export default function GlitchTextSystem() {
 
         picked.forEach((el, i) => {
           setTimeout(() => {
-            const heavy = cascade || Math.random() < 0.40;   // 40% heavy en modo normal
+            const heavy = cascade || Math.random() < 0.40;
             applyGlitch(el, heavy);
 
-            // 90% chance de scramble de texto
-            if (Math.random() < 0.90) {
-              // duración scramble: 500ms–1000ms  →  se ve claramente
+            // Scramble solo en texto estático (nunca en contadores numéricos)
+            // Los contadores usan solo dígitos/% → isSafeToScramble = false
+            // → solo reciben el efecto CSS, no el reemplazo de caracteres
+            const text = el.textContent?.trim() ?? '';
+            if (Math.random() < 0.90 && isSafeToScramble(text)) {
               const ms = 500 + Math.random() * 500;
               setTimeout(() => scramble(el, ms), 20);
             }
