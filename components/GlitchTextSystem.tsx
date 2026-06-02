@@ -191,6 +191,11 @@ export default function GlitchTextSystem() {
 
         const picked = shuffled.slice(0, Math.min(count, shuffled.length));
 
+        // Trigger hacker overlay on cascade mode
+        if (cascade) {
+          window.dispatchEvent(new CustomEvent('hacker-appear'));
+        }
+
         // Stagger entre cada elemento para que se vea la propagación
         const stagger = cascade ? 25 : 80 + Math.random() * 60;
 

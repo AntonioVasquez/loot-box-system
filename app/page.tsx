@@ -9,6 +9,7 @@ import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
 import MatrixBackground   from '@/components/MatrixBackground';
 import GlitchTextSystem   from '@/components/GlitchTextSystem';
+import HackerOverlay      from '@/components/HackerOverlay';
 import { launchOrb }       from '@/utils/orbEffect';
 import { launchLightning } from '@/utils/lightningEffect';
 import { triggerDestruction } from '@/utils/destroyEffect';
@@ -265,6 +266,9 @@ export default function Home() {
 
       {/* ── Random text glitch / connection-failure effect ──────── */}
       <GlitchTextSystem />
+
+      {/* ── Hacker overlay (cascade glitch background effect) ───── */}
+      <HackerOverlay />
 
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="pt-10 pb-6 text-center relative z-10 w-full">
