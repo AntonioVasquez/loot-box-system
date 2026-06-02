@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { BoxList, BoxItem, MAX_BOXES } from '@/types';
+import { useState, useEffect, useRef } from 'react';
+import { BoxList, BoxItem, MAX_BOXES, RarityType } from '@/types';
 import AddBoxForm from '@/components/AddBoxForm';
 import BoxCard from '@/components/BoxCard';
 import BoxOpener from '@/components/BoxOpener';
@@ -10,6 +10,8 @@ import HudPanel from '@/components/HudPanel';
 import MatrixBackground from '@/components/MatrixBackground';
 import { launchOrb } from '@/utils/orbEffect';
 import useLocalStorage from '@/hooks/useLocalStorage';
+
+type PendingOrb = { targetId: string; rarity: RarityType; buttonRect: DOMRect };
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
@@ -31,9 +33,47 @@ export default function Home() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // Orb animation state
-  const [hiddenItemId,   setHiddenItemId]   = useState<string | null>(null);
-  const [materializeId,  setMaterializeId]  = useState<string | null>(null);
+  // ── Orb animation state ─────────────────────────────────────────
+  const [hiddenItemId,  setHiddenItemId]  = useState<string | null>(null);
+  const [materializeId, setMaterializeId] = useState<string | null>(null);
+  const [pendingOrb,    setPendingOrb]    = useState<PendingOrb | null>(null);
+  const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Runs AFTER the DOM has painted the new card (useEffect = post-render).
+   * This is more reliable than setTimeout(60ms).
+   */
+  useEffect(() => {
+    if (!pendingOrb) return;
+    const { targetId, rarity, buttonRect } = pendingOrb;
+
+    // Find the hidden card in the grid
+    const cardEl = document.querySelector<HTMLElement>(`[data-item-id="${targetId}"]`);
+
+    const reveal = (materialize: boolean) => {
+      if (safetyRef.current) { clearTimeout(safetyRef.current); safetyRef.current = null; }
+      setHiddenItemId(null);
+      if (materialize) {
+        setMaterializeId(targetId);
+        setTimeout(() => setMaterializeId(null), 700);
+      }
+      setPendingOrb(null);
+    };
+
+    if (!cardEl) { reveal(false); return; }
+
+    // Safety: always reveal after 1.4 s even if the canvas animation stalls
+    safetyRef.current = setTimeout(() => reveal(false), 1400);
+
+    const cardRect = cardEl.getBoundingClientRect();
+
+    try {
+      launchOrb(buttonRect, cardRect, rarity, () => reveal(true));
+    } catch {
+      reveal(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingOrb]);
 
   const [editingList, setEditingList] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -52,41 +92,24 @@ export default function Home() {
 
   const handleAddBox = (
     newBoxes: Omit<BoxItem, 'id' | 'createdAt'> | Omit<BoxItem, 'id' | 'createdAt'>[],
-    meta?: { buttonRect: DOMRect; rarity: import('@/types').RarityType },
+    meta?: { buttonRect: DOMRect; rarity: RarityType },
   ) => {
     const itemsToAdd = Array.isArray(newBoxes) ? newBoxes : [newBoxes];
     const newItems: BoxItem[] = itemsToAdd.map((box, index) => ({
-      ...box, id: `${Date.now()}-${index}`, createdAt: new Date()
+      ...box, id: `${Date.now()}-${index}`, createdAt: new Date(),
     }));
-
-    // The last new item is the one we'll animate into
     const targetId = newItems[newItems.length - 1].id;
 
-    // 1. Mark as hidden before adding
-    setHiddenItemId(targetId);
+    // Add items to the list (the target card will render hidden)
+    if (meta?.buttonRect) setHiddenItemId(targetId);
     setMaterializeId(null);
+    setBoxList((prev: BoxList) => ({
+      ...prev, items: [...prev.items, ...newItems], updatedAt: new Date(),
+    }));
 
-    // 2. Add to list (renders hidden)
-    setBoxList((prev: BoxList) => ({ ...prev, items: [...prev.items, ...newItems], updatedAt: new Date() }));
-
+    // Trigger orb via state → useEffect runs after DOM paint
     if (meta?.buttonRect) {
-      // 3. After render, find the new card and launch orb
-      setTimeout(() => {
-        const cardEl = document.querySelector(`[data-item-id="${targetId}"]`);
-        if (!cardEl) { setHiddenItemId(null); return; }
-        const cardRect = cardEl.getBoundingClientRect();
-
-        launchOrb(meta.buttonRect, cardRect, meta.rarity, () => {
-          // 4. Orb lands → materialise card
-          setHiddenItemId(null);
-          setMaterializeId(targetId);
-          // 5. Clear materialise class after animation
-          setTimeout(() => setMaterializeId(null), 650);
-        });
-      }, 60);
-    } else {
-      // No animation: just show immediately
-      setHiddenItemId(null);
+      setPendingOrb({ targetId, rarity: meta.rarity, buttonRect: meta.buttonRect });
     }
   };
 
