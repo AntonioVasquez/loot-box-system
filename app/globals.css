@@ -288,6 +288,20 @@
   pointer-events: none;
 }
 
+/* ── Card materialise fast — lightning strike (range mode) ──────── */
+@keyframes card-materialize-fast {
+  0%   { transform: scale(0.08) rotate(-5deg); opacity: 0;   filter: brightness(16) blur(10px); outline: 3px solid rgba(255,255,255,0); }
+  10%  { transform: scale(1.22) rotate(1.5deg); opacity: 1;  filter: brightness(7)  blur(2px);  outline: 3px solid rgba(255,255,255,0.85); }
+  28%  { transform: scale(0.90);                opacity: 1;  filter: brightness(2.5) blur(0px); outline: 3px solid rgba(255,255,255,0.1); }
+  50%  { transform: scale(1.07);                              filter: brightness(1.5); outline: none; }
+  72%  { transform: scale(0.97);                              filter: brightness(1.1); }
+  100% { transform: scale(1) rotate(0deg);                   filter: brightness(1); }
+}
+
+.card-materialize-fast {
+  animation: card-materialize-fast 0.44s cubic-bezier(0.22, 1.85, 0.36, 1) forwards;
+}
+
 /* ── Card materialise — orb impact (epic insertion) ─────────────── */
 @keyframes card-materialize {
   0%   {

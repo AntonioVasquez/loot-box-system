@@ -8,12 +8,14 @@ import BoxOpener from '@/components/BoxOpener';
 import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
 import MatrixBackground from '@/components/MatrixBackground';
-import { launchOrb } from '@/utils/orbEffect';
+import { launchOrb }       from '@/utils/orbEffect';
+import { launchLightning } from '@/utils/lightningEffect';
 import { triggerDestruction } from '@/utils/destroyEffect';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
-type PendingOrb = { targetId: string; rarity: RarityType; buttonRect: DOMRect };
+type PendingOrb      = { targetId: string; rarity: RarityType; buttonRect: DOMRect };
+type PendingSequence = { items: BoxItem[]; rarity: RarityType; buttonRect: DOMRect; index: number };
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
@@ -35,11 +37,16 @@ export default function Home() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // ── Orb / spawn animation state ─────────────────────────────────
+  // ── Single-item orb animation ────────────────────────────────────
   const [hiddenItemId,  setHiddenItemId]  = useState<string | null>(null);
   const [materializeId, setMaterializeId] = useState<string | null>(null);
   const [pendingOrb,    setPendingOrb]    = useState<PendingOrb | null>(null);
   const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Range / sequential lightning animation ───────────────────────
+  const [hiddenRangeIds,    setHiddenRangeIds]    = useState<Set<string>>(new Set());
+  const [materializeRangeIds, setMaterializeRangeIds] = useState<Set<string>>(new Set());
+  const [pendingSequence,   setPendingSequence]   = useState<PendingSequence | null>(null);
 
   // ── Delete confirmation + destroy animation state ────────────────
   const [confirmDelete, setConfirmDelete] = useState<BoxItem | null>(null);
@@ -89,6 +96,58 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingOrb]);
 
+  /**
+   * Sequential lightning — runs after each index advance.
+   * Launches one bolt, waits for it to hit, reveals that card,
+   * then advances the index to fire the next bolt.
+   *
+   * Timeline per card: 260ms flight + 200ms impact + 100ms stagger
+   * → 10 cards take ~3.6 s total.
+   */
+  useEffect(() => {
+    if (!pendingSequence) return;
+    const { items, buttonRect, rarity, index } = pendingSequence;
+
+    // All cards processed → clean up
+    if (index >= items.length) {
+      setPendingSequence(null);
+      return;
+    }
+
+    const item   = items[index];
+    const cardEl = document.querySelector<HTMLElement>(`[data-item-id="${item.id}"]`);
+
+    // Card not in DOM yet (shouldn't happen) → reveal and skip
+    if (!cardEl) {
+      setHiddenRangeIds(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+      setPendingSequence(prev => prev ? { ...prev, index: prev.index + 1 } : null);
+      return;
+    }
+
+    const cardRect = cardEl.getBoundingClientRect();
+
+    const onHit = () => {
+      // Reveal with fast materialize
+      setHiddenRangeIds(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+      setMaterializeRangeIds(prev => new Set([...prev, item.id]));
+      setTimeout(() => {
+        setMaterializeRangeIds(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+      }, 600);
+
+      // Fire next bolt after short stagger
+      setTimeout(() => {
+        setPendingSequence(prev => prev ? { ...prev, index: prev.index + 1 } : null);
+      }, 100);
+    };
+
+    try {
+      launchLightning(buttonRect, cardRect, rarity, onHit);
+    } catch {
+      onHit();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSequence]);
+
   const [editingList, setEditingList] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempDescription, setTempDescription] = useState('');
@@ -109,21 +168,27 @@ export default function Home() {
     meta?: { buttonRect: DOMRect; rarity: RarityType },
   ) => {
     const itemsToAdd = Array.isArray(newBoxes) ? newBoxes : [newBoxes];
-    const newItems: BoxItem[] = itemsToAdd.map((box, index) => ({
-      ...box, id: `${Date.now()}-${index}`, createdAt: new Date(),
+    const newItems: BoxItem[] = itemsToAdd.map((box, i) => ({
+      ...box, id: `${Date.now()}-${i}`, createdAt: new Date(),
     }));
-    const targetId = newItems[newItems.length - 1].id;
 
-    // Add items to the list (the target card will render hidden)
-    if (meta?.buttonRect) setHiddenItemId(targetId);
-    setMaterializeId(null);
+    // All items go into state immediately (cards render hidden)
     setBoxList((prev: BoxList) => ({
       ...prev, items: [...prev.items, ...newItems], updatedAt: new Date(),
     }));
 
-    // Trigger orb via state → useEffect runs after DOM paint
-    if (meta?.buttonRect) {
+    if (!meta?.buttonRect) return;
+
+    if (newItems.length === 1) {
+      // ── Single item → orb animation ──────────────────────────
+      const targetId = newItems[0].id;
+      setHiddenItemId(targetId);
+      setMaterializeId(null);
       setPendingOrb({ targetId, rarity: meta.rarity, buttonRect: meta.buttonRect });
+    } else {
+      // ── Range → sequential lightning strikes ──────────────────
+      setHiddenRangeIds(new Set(newItems.map(i => i.id)));
+      setPendingSequence({ items: newItems, rarity: meta.rarity, buttonRect: meta.buttonRect, index: 0 });
     }
   };
 
@@ -384,9 +449,11 @@ export default function Home() {
                           key={item.id}
                           data-item-id={item.id}
                           className={
-                            hiddenItemId  === item.id ? 'opacity-0 scale-0 pointer-events-none' :
-                            materializeId === item.id ? 'card-materialize' :
-                            destroyingId  === item.id ? 'card-destroy' :
+                            hiddenItemId  === item.id           ? 'opacity-0 scale-0 pointer-events-none' :
+                            hiddenRangeIds.has(item.id)         ? 'opacity-0 scale-0 pointer-events-none' :
+                            materializeId === item.id           ? 'card-materialize' :
+                            materializeRangeIds.has(item.id)    ? 'card-materialize-fast' :
+                            destroyingId  === item.id           ? 'card-destroy' :
                             'transition-transform duration-200'
                           }
                         >
