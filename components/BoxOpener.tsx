@@ -5,7 +5,7 @@ import { BoxItem, RARITY_CONFIG } from '@/types';
 import BoxCard from './BoxCard';
 import HudPanel from './HudPanel';
 import Image from 'next/image';
-import { triggerEpicEffect } from '@/utils/epicEffect';
+import { triggerOsEffect } from '@/utils/osEffect';
 
 interface BoxOpenerProps {
   items: BoxItem[];
@@ -58,8 +58,10 @@ export default function BoxOpener({
     revealAudioRef.current.play().catch(() => {});
   };
 
+  const resultCardRef = useRef<HTMLDivElement>(null);
+
   const triggerRarityEffect = (item: BoxItem) => {
-    triggerEpicEffect(item.rarity);
+    triggerOsEffect(item.rarity, resultCardRef.current);
   };
 
   const drawnSet = new Set(persistedDrawnIds);
@@ -264,7 +266,7 @@ export default function BoxOpener({
               })}
             </div>
           ) : result ? (
-            <div className="relative z-30 animate-in zoom-in-75 duration-500">
+            <div ref={resultCardRef} className="relative z-30 animate-in zoom-in-75 duration-500">
               <BoxCard item={result} isResult />
             </div>
           ) : (
