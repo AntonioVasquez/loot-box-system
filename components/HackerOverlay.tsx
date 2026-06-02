@@ -333,8 +333,25 @@ export default function HackerOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [opacity, setOpacity] = useState(0);
-  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [terminalLines, setTerminalLines] = useState<string[]>(['$ /root/security/monitor.sh', '> Monitoring system...']);
   const [isDanger, setIsDanger] = useState(false);
+
+  const MONITORING_COMMANDS = [
+    '$ tail -f /var/log/syslog',
+    '> [INFO] System nominal',
+    '$ systemctl status firewall',
+    '> ● firewall.service - running',
+    '$ netstat -an | wc -l',
+    '> Active connections: 847',
+    '$ df -h / | tail -1',
+    '> /dev/sda1 12G 8.2G 2.1G 82%',
+    '$ ps aux | wc -l',
+    '> Running processes: 234',
+    '$ uptime',
+    '> up 45 days, 12:34, 3 users',
+    '$ du -sh /var/log',
+    '> 2.3G /var/log',
+  ];
 
   const DEFENSE_COMMANDS = [
     '$ sudo systemctl start firewall',
@@ -351,6 +368,12 @@ export default function HackerOverlay() {
     '> Capturing packets... [███████░░░] 65%',
     '$ netstat -tulpn | grep LISTEN',
     '> Monitoring connections...',
+    '$ fail2ban-client status',
+    '> Status enabled - 3 jails active',
+    '$ systemctl restart ssh',
+    '> SSH service restarted...',
+    '$ ufw enable',
+    '> Firewall enabled [██████████] 100%',
   ];
 
   useEffect(() => {
@@ -422,7 +445,6 @@ export default function HackerOverlay() {
         ctx.clearRect(0, 0, vw, vh);
         setIsVisible(false);
         setOpacity(0);
-        setTerminalLines([]);
         setIsDanger(false);
       }
     };
@@ -460,17 +482,21 @@ export default function HackerOverlay() {
     };
   }, []);
 
-  /* Terminal command simulation */
+  /* Terminal command simulation — always running */
   useEffect(() => {
-    if (!isDanger || terminalLines.length < 1) return;
-
     const timer = setTimeout(() => {
-      const randomCommand = DEFENSE_COMMANDS[Math.floor(Math.random() * DEFENSE_COMMANDS.length)];
+      const commandPool = isDanger ? DEFENSE_COMMANDS : MONITORING_COMMANDS;
+      const randomCommand = commandPool[Math.floor(Math.random() * commandPool.length)];
+      const delay = isDanger ? (600 + Math.random() * 1000) : (1200 + Math.random() * 1800);
+      
       setTerminalLines(prev => {
         const newLines = [...prev, randomCommand];
         return newLines.length > 8 ? newLines.slice(-8) : newLines;
       });
-    }, 800 + Math.random() * 1200);
+      
+      // Schedule next command
+      return delay;
+    }, isDanger ? (600 + Math.random() * 1000) : (1200 + Math.random() * 1800));
 
     return () => clearTimeout(timer);
   }, [terminalLines, isDanger]);
@@ -517,92 +543,99 @@ export default function HackerOverlay() {
         }}
       />
 
-      {/* Defense Terminal — appears during danger mode */}
-      {isVisible && isDanger && (
+      {/* Defense Terminal — Always Visible */}
+      <div
+        style={{
+          position:      'fixed',
+          top:           '20px',
+          left:          '20px',
+          width:         '380px',
+          maxHeight:     '240px',
+          zIndex:        3,
+          pointerEvents: 'none',
+        }}
+      >
         <div
           style={{
-            position:      'fixed',
-            top:           '20px',
-            left:          '20px',
-            width:         '380px',
-            maxHeight:     '240px',
-            zIndex:        3,
-            pointerEvents: 'none',
-            opacity:       opacity,
-            transition:    'opacity 150ms ease-out',
+            background:    'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,20,10,0.92) 100%)',
+            border:        isDanger ? '2px solid #ff3333' : '2px solid #00ff00',
+            borderRadius:  '4px',
+            padding:       '12px 14px',
+            fontFamily:    '"Courier New", monospace',
+            fontSize:      '11px',
+            lineHeight:    '1.6',
+            color:         isDanger ? '#ff6666' : '#00ff00',
+            boxShadow:     isDanger 
+              ? '0 0 20px rgba(255,50,50,0.8), inset 0 0 10px rgba(255,50,50,0.2)' 
+              : '0 0 20px rgba(0,255,0,0.6), inset 0 0 10px rgba(0,255,0,0.1)',
+            overflow:      'hidden',
+            textShadow:    isDanger 
+              ? '0 0 5px rgba(255,100,100,0.8)' 
+              : '0 0 5px rgba(0,255,0,0.8)',
+            transition:    'all 500ms ease-out',
           }}
         >
+          {/* Terminal header */}
           <div
             style={{
-              background:    'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,20,10,0.92) 100%)',
-              border:        '2px solid #00ff00',
-              borderRadius:  '4px',
-              padding:       '12px 14px',
-              fontFamily:    '"Courier New", monospace',
-              fontSize:      '11px',
-              lineHeight:    '1.6',
-              color:         '#00ff00',
-              boxShadow:     '0 0 20px rgba(0,255,0,0.6), inset 0 0 10px rgba(0,255,0,0.1)',
-              overflow:      'hidden',
-              textShadow:    '0 0 5px rgba(0,255,0,0.8)',
+              marginBottom:  '8px',
+              borderBottom:  isDanger ? '1px solid rgba(255,100,100,0.5)' : '1px solid rgba(0,255,0,0.3)',
+              paddingBottom: '6px',
+              display:       'flex',
+              justifyContent: 'space-between',
+              alignItems:    'center',
             }}
           >
-            {/* Terminal header */}
-            <div
-              style={{
-                marginBottom:  '8px',
-                borderBottom:  '1px solid rgba(0,255,0,0.3)',
-                paddingBottom: '6px',
-                display:       'flex',
-                justifyContent: 'space-between',
-                alignItems:    'center',
-              }}
-            >
-              <span style={{ fontSize: '10px', opacity: 0.7 }}>root@nexus ~ #</span>
-              <span style={{ fontSize: '9px', opacity: 0.6, color: '#ffff00' }}>● DEFENSE ACTIVE</span>
-            </div>
+            <span style={{ fontSize: '10px', opacity: 0.7 }}>root@nexus ~ #</span>
+            <span style={{ 
+              fontSize: '9px', 
+              opacity: 0.8, 
+              color: isDanger ? '#ff3333' : '#00ff00',
+              fontWeight: 'bold',
+            }}>
+              {isDanger ? '● INTRUSION!' : '● MONITORING'}
+            </span>
+          </div>
 
-            {/* Terminal content */}
+          {/* Terminal content */}
+          <div
+            style={{
+              maxHeight:   '190px',
+              overflow:    'hidden',
+              whiteSpace:  'pre-wrap',
+              wordBreak:   'break-all',
+            }}
+          >
+            {terminalLines.map((line, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginBottom:  '2px',
+                  color:         isDanger 
+                    ? (line.includes('ERROR') ? '#ff3333' : line.includes('100%') ? '#ff6666' : '#ff8888')
+                    : (line.includes('ERROR') ? '#ff6666' : line.includes('100%') ? '#00ff00' : '#00dd00'),
+                  textShadow:    isDanger
+                    ? (line.includes('ERROR') ? '0 0 8px rgba(255,50,50,0.9)' : '0 0 5px rgba(255,100,100,0.7)')
+                    : (line.includes('ERROR') ? '0 0 8px rgba(255,100,100,0.8)' : '0 0 5px rgba(0,255,0,0.6)'),
+                  animation:     idx === terminalLines.length - 1 ? 'blink 1s infinite' : 'none',
+                }}
+              >
+                {line}
+              </div>
+            ))}
+            
+            {/* Cursor */}
             <div
               style={{
-                maxHeight:   '190px',
-                overflow:    'hidden',
-                whiteSpace:  'pre-wrap',
-                wordBreak:   'break-all',
+                display:     'inline-block',
+                width:       '8px',
+                height:      '13px',
+                background:  isDanger ? '#ff3333' : '#00ff00',
+                marginLeft:  '2px',
+                animation:   'blink 1s infinite',
+                boxShadow:   isDanger ? '0 0 8px rgba(255,50,50,0.8)' : '0 0 8px rgba(0,255,0,0.8)',
               }}
-            >
-              {terminalLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    marginBottom:  '2px',
-                    color:         line.includes('ERROR') ? '#ff6666' : 
-                                  line.includes('100%') ? '#00ff00' : '#00dd00',
-                    textShadow:    line.includes('ERROR') ? '0 0 8px rgba(255,100,100,0.8)' : 
-                                   line.includes('100%') ? '0 0 8px rgba(0,255,0,1)' : 
-                                   '0 0 5px rgba(0,255,0,0.6)',
-                    animation:     idx === terminalLines.length - 1 ? 'blink 1s infinite' : 'none',
-                  }}
-                >
-                  {line}
-                </div>
-              ))}
-              
-              {/* Cursor */}
-              {isDanger && (
-                <div
-                  style={{
-                    display:     'inline-block',
-                    width:       '8px',
-                    height:      '13px',
-                    background:  '#00ff00',
-                    marginLeft:  '2px',
-                    animation:   'blink 1s infinite',
-                    boxShadow:   '0 0 8px rgba(0,255,0,0.8)',
-                  }}
-                />
-              )}
-            </div>
+            />
           </div>
 
           {/* Terminal glow effect */}
@@ -611,13 +644,15 @@ export default function HackerOverlay() {
               position:      'absolute',
               inset:         '-8px',
               borderRadius:  '4px',
-              background:    'radial-gradient(ellipse at center, rgba(0,255,0,0.2) 0%, rgba(0,255,0,0) 70%)',
+              background:    isDanger 
+                ? 'radial-gradient(ellipse at center, rgba(255,50,50,0.2) 0%, rgba(255,50,50,0) 70%)'
+                : 'radial-gradient(ellipse at center, rgba(0,255,0,0.2) 0%, rgba(0,255,0,0) 70%)',
               pointerEvents: 'none',
               zIndex:        -1,
             }}
           />
         </div>
-      )}
+      </div>
 
       {/* CSS Animations */}
       <style>{`
