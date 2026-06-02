@@ -211,7 +211,35 @@ export default function HackerOverlay() {
 
   return (
     <>
-      {/* Canvas for effects (scanlines, code rain, glitch bars) */}
+      {/* PNG Image background — behind everything */}
+      {isVisible && (
+        <div
+          style={{
+            position:      'fixed',
+            inset:         0,
+            pointerEvents: 'none',
+            zIndex:        0,
+            opacity:       opacity,
+            transition:    'opacity 150ms ease-out',
+            overflow:      'hidden',
+            background:    'radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%)',
+          }}
+        >
+          <img
+            src="/img/hacker.png"
+            alt="hacker"
+            style={{
+              width:     '100%',
+              height:    '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              filter:    `brightness(1.15) contrast(1.2) drop-shadow(0 0 40px rgba(168,85,247,${opacity * 0.7})) drop-shadow(0 0 80px rgba(6,182,212,${opacity * 0.5}))`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Canvas for effects (scanlines, code rain, glitch bars) — on top of image */}
       <canvas
         ref={canvasRef}
         aria-hidden
@@ -219,38 +247,9 @@ export default function HackerOverlay() {
           position:      'fixed',
           inset:         0,
           pointerEvents: 'none',
-          zIndex:        2,
+          zIndex:        1,
         }}
       />
-
-      {/* PNG Image background */}
-      {isVisible && (
-        <div
-          style={{
-            position:      'fixed',
-            inset:         0,
-            pointerEvents: 'none',
-            zIndex:        1,
-            opacity:       opacity,
-            transition:    'opacity 150ms ease-out',
-            display:       'flex',
-            alignItems:    'center',
-            justifyContent: 'center',
-            background:    'radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)',
-          }}
-        >
-          <img
-            src="/img/hacker.png"
-            alt="hacker"
-            style={{
-              maxWidth:  '80%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-              filter:    `brightness(1.1) contrast(1.15) drop-shadow(0 0 30px rgba(168,85,247,${opacity * 0.6})) drop-shadow(0 0 60px rgba(6,182,212,${opacity * 0.4}))`,
-            }}
-          />
-        </div>
-      )}
     </>
   );
 }
