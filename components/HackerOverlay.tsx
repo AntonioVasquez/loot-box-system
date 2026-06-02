@@ -30,6 +30,56 @@ interface FloatSymbol {
   color: string;
 }
 
+/* ── Falling code rain effect ───────────────────────────────── */
+interface CodeRain {
+  x: number; y: number;
+  speed: number;
+  char: string;
+  color: string;
+}
+
+const codeRainList: CodeRain[] = [];
+
+function drawCodeRain(
+  ctx:           CanvasRenderingContext2D,
+  vw:            number,
+  vh:            number,
+  masterOpacity: number,
+) {
+  // Spawn new rain
+  if (Math.random() < 0.35 && codeRainList.length < 120) {
+    codeRainList.push({
+      x:     Math.random() * vw,
+      y:     -20,
+      speed: 0.8 + Math.random() * 1.2,
+      char:  HACKER_CHARS[Math.floor(Math.random() * HACKER_CHARS.length)],
+      color: ['rgba(6,182,212,0.5)', 'rgba(168,85,247,0.4)', 'rgba(59,130,246,0.45)'][
+        Math.floor(Math.random() * 3)
+      ],
+    });
+  }
+
+  // Update & draw rain
+  for (let i = codeRainList.length - 1; i >= 0; i--) {
+    const r = codeRainList[i];
+    r.y += r.speed;
+
+    if (r.y > vh) {
+      codeRainList.splice(i, 1);
+      continue;
+    }
+
+    ctx.globalAlpha = masterOpacity * 0.6;
+    ctx.font        = '12px "Courier New", monospace';
+    ctx.fillStyle   = r.color;
+    ctx.shadowBlur  = 4;
+    ctx.shadowColor = r.color;
+    ctx.fillText(r.char, r.x, r.y);
+    ctx.shadowBlur  = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
 /* ── Draw the hooded-figure silhouette ────────────────────────── */
 function drawFigure(
   ctx:           CanvasRenderingContext2D,
@@ -277,8 +327,12 @@ export default function HackerOverlay() {
 
       ctx.clearRect(0, 0, vw, vh);
 
+      /* Draw constant code rain background — more intense during hacker */
+      const rainIntensity = running ? 0.8 : 0.3;
+      drawCodeRain(ctx, vw, vh, rainIntensity * masterOpacity);
+
       /* Spawn floating symbols */
-      if (Math.random() < 0.25) spawnSymbol(cx, cy, figW, figH);
+      if (Math.random() < (running ? 0.45 : 0.15)) spawnSymbol(cx, cy, figW, figH);
 
       /* Update symbols */
       for (let i = symbols.length - 1; i >= 0; i--) {
@@ -342,7 +396,7 @@ export default function HackerOverlay() {
         position:      'fixed',
         inset:         0,
         pointerEvents: 'none',
-        zIndex:        2,           // above matrix (0) below UI (10+)
+        zIndex:        1,           // above matrix (0) but behind all UI (10+)
       }}
     />
   );
