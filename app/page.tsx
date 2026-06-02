@@ -8,6 +8,7 @@ import BoxOpener from '@/components/BoxOpener';
 import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
 import MatrixBackground from '@/components/MatrixBackground';
+import { launchOrb } from '@/utils/orbEffect';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 export default function Home() {
@@ -30,6 +31,10 @@ export default function Home() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
+  // Orb animation state
+  const [hiddenItemId,   setHiddenItemId]   = useState<string | null>(null);
+  const [materializeId,  setMaterializeId]  = useState<string | null>(null);
+
   const [editingList, setEditingList] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempDescription, setTempDescription] = useState('');
@@ -45,12 +50,44 @@ export default function Home() {
     }
   }, [boxList]);
 
-  const handleAddBox = (newBoxes: Omit<BoxItem, 'id' | 'createdAt'> | Omit<BoxItem, 'id' | 'createdAt'>[]) => {
+  const handleAddBox = (
+    newBoxes: Omit<BoxItem, 'id' | 'createdAt'> | Omit<BoxItem, 'id' | 'createdAt'>[],
+    meta?: { buttonRect: DOMRect; rarity: import('@/types').RarityType },
+  ) => {
     const itemsToAdd = Array.isArray(newBoxes) ? newBoxes : [newBoxes];
     const newItems: BoxItem[] = itemsToAdd.map((box, index) => ({
       ...box, id: `${Date.now()}-${index}`, createdAt: new Date()
     }));
+
+    // The last new item is the one we'll animate into
+    const targetId = newItems[newItems.length - 1].id;
+
+    // 1. Mark as hidden before adding
+    setHiddenItemId(targetId);
+    setMaterializeId(null);
+
+    // 2. Add to list (renders hidden)
     setBoxList((prev: BoxList) => ({ ...prev, items: [...prev.items, ...newItems], updatedAt: new Date() }));
+
+    if (meta?.buttonRect) {
+      // 3. After render, find the new card and launch orb
+      setTimeout(() => {
+        const cardEl = document.querySelector(`[data-item-id="${targetId}"]`);
+        if (!cardEl) { setHiddenItemId(null); return; }
+        const cardRect = cardEl.getBoundingClientRect();
+
+        launchOrb(meta.buttonRect, cardRect, meta.rarity, () => {
+          // 4. Orb lands → materialise card
+          setHiddenItemId(null);
+          setMaterializeId(targetId);
+          // 5. Clear materialise class after animation
+          setTimeout(() => setMaterializeId(null), 650);
+        });
+      }, 60);
+    } else {
+      // No animation: just show immediately
+      setHiddenItemId(null);
+    }
   };
 
   const handleDeleteBox = (id: string) =>
@@ -285,7 +322,17 @@ export default function Home() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-1 max-h-[580px] custom-scrollbar relative z-10">
                       {boxList.items.map(item => (
-                        <BoxCard key={item.id} item={item} onDelete={handleDeleteBox} showDelete />
+                        <div
+                          key={item.id}
+                          data-item-id={item.id}
+                          className={
+                            hiddenItemId  === item.id ? 'opacity-0 scale-0 pointer-events-none' :
+                            materializeId === item.id ? 'card-materialize' :
+                            'transition-transform duration-200'
+                          }
+                        >
+                          <BoxCard item={item} onDelete={handleDeleteBox} showDelete />
+                        </div>
                       ))}
                     </div>
                   )}

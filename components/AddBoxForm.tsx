@@ -6,7 +6,10 @@ import Image from 'next/image';
 import HudPanel from './HudPanel';
 
 interface AddBoxFormProps {
-  onAdd: (item: Omit<BoxItem, 'id' | 'createdAt'> | Omit<BoxItem, 'id' | 'createdAt'>[]) => void;
+  onAdd: (
+    item: Omit<BoxItem, 'id' | 'createdAt'> | Omit<BoxItem, 'id' | 'createdAt'>[],
+    meta: { buttonRect: DOMRect; rarity: RarityType },
+  ) => void;
   currentCount: number;
   maxBoxes: number;
 }
@@ -30,7 +33,8 @@ export default function AddBoxForm({ onAdd, currentCount, maxBoxes }: AddBoxForm
   const [isRangeMode, setIsRangeMode] = useState(false);
   const [rangeStart, setRangeStart] = useState<number>(1);
   const [rangeEnd, setRangeEnd] = useState<number>(10);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef  = useRef<HTMLInputElement>(null);
+  const submitBtnRef  = useRef<HTMLButtonElement>(null);
 
   const handleRarityChange = (newRarity: RarityType) => {
     setRarity(newRarity);
@@ -76,12 +80,17 @@ export default function AddBoxForm({ onAdd, currentCount, maxBoxes }: AddBoxForm
       if (currentCount + count > maxBoxes) { alert(`Límite: ${maxBoxes}. Ya tienes ${currentCount}`); return; }
       const items: Omit<BoxItem, 'id' | 'createdAt'>[] = [];
       for (let i = start; i <= end; i++) items.push({ identifier: i.toString(), identifierType: 'numero', rarity, percentage });
-      onAdd(items);
+      const bRect = submitBtnRef.current?.getBoundingClientRect() ?? new DOMRect();
+      onAdd(items, { buttonRect: bRect, rarity });
     } else {
       if (!identifier.trim() && identifierType !== 'imagen') { alert('Ingresa un identificador'); return; }
       if (identifierType === 'imagen' && !imageUrl.trim()) { alert('Sube una imagen'); return; }
       if (percentage <= 0 || percentage > 100) { alert('Porcentaje entre 1 y 100'); return; }
-      onAdd({ identifier: identifierType === 'imagen' ? 'Imagen' : identifier, identifierType, rarity, percentage, imageUrl: identifierType === 'imagen' ? imageUrl : undefined });
+      const bRect = submitBtnRef.current?.getBoundingClientRect() ?? new DOMRect();
+      onAdd(
+        { identifier: identifierType === 'imagen' ? 'Imagen' : identifier, identifierType, rarity, percentage, imageUrl: identifierType === 'imagen' ? imageUrl : undefined },
+        { buttonRect: bRect, rarity },
+      );
       setIdentifier(''); setImageUrl('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -262,7 +271,7 @@ export default function AddBoxForm({ onAdd, currentCount, maxBoxes }: AddBoxForm
         </div>
 
         {/* Submit */}
-        <button type="submit" disabled={isDisabled}
+        <button ref={submitBtnRef} type="submit" disabled={isDisabled}
           className={`relative w-full overflow-hidden group py-3.5 rounded-xl font-display font-bold uppercase tracking-[0.15em] text-sm flex items-center justify-center gap-3 transition-all duration-300 mt-2 ${
             isDisabled ? 'opacity-40 cursor-not-allowed border border-gray-800 text-gray-600' :
             'border border-primary/30 hover:border-primary/70 text-white hover:-translate-y-0.5'
