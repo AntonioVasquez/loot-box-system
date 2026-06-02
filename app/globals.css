@@ -238,6 +238,54 @@
   85%,95% { opacity: 0; }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   SYSTEM TEXT GLITCH  — applied randomly by GlitchTextSystem.tsx
+   Simulates connection loss / signal corruption / reconnection
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Light glitch — brief jitter + color shift + blink */
+@keyframes sys-glitch-light {
+  0%   { transform: none;                           filter: none;                         opacity: 1; }
+  7%   { transform: translateX(-4px) skewX(-3deg);  filter: brightness(3) saturate(4);    opacity: 0.85; }
+  10%  { transform: translateX(5px);                filter: none;                         opacity: 0.07; }
+  12%  { transform: translateX(-2px) skewX(2deg);   filter: brightness(2) hue-rotate(155deg); opacity: 1; }
+  18%  { transform: none;                           filter: none;                         opacity: 1; }
+  24%  { transform: translateX(3px) skewX(-1.5deg); filter: hue-rotate(80deg) brightness(1.8); }
+  27%  { transform: none;                           opacity: 0;                           }
+  29%  { transform: none;                           filter: none;                         opacity: 1; }
+  100% { transform: none;                           filter: none;                         opacity: 1; }
+}
+
+/* Heavy glitch — double corruption + longer blackout */
+@keyframes sys-glitch-heavy {
+  0%   { transform: none;                           filter: none;                         opacity: 1; }
+  4%   { transform: translateX(-8px) skewX(-6deg);  filter: brightness(5) saturate(5) hue-rotate(15deg); }
+  7%   { transform: translateX(9px);                filter: none;                         opacity: 0; }
+  9%   { transform: translateX(-4px);               filter: brightness(4);                opacity: 1; }
+  14%  { transform: none;                           filter: none;                         opacity: 1; }
+  19%  { transform: translateX(7px) skewX(5deg);    filter: hue-rotate(200deg) brightness(3); }
+  22%  { transform: none;                           opacity: 0;                           }
+  24%  { transform: none;                           opacity: 1;                           filter: none; }
+  32%  { transform: translateX(-5px) skewX(-3deg);  filter: brightness(3) saturate(3);   }
+  35%  { transform: none;                           opacity: 0;                           }
+  37%  { transform: none;                           opacity: 1;                           filter: none; }
+  46%  { transform: translateX(3px);                filter: brightness(1.6) hue-rotate(90deg); }
+  50%  { transform: none;                           filter: none;                         opacity: 1; }
+  100% { transform: none;                           filter: none;                         opacity: 1; }
+}
+
+/* Scan line sweep — a horizontal line that crosses the viewport */
+@keyframes sys-scan-sweep {
+  0%   { transform: translateY(-4px);  opacity: 0; }
+  3%   { opacity: 1; }
+  97%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Applied by JS */
+.sys-glitch       { animation: sys-glitch-light 0.30s steps(1, end) forwards !important; }
+.sys-glitch-heavy { animation: sys-glitch-heavy 0.52s steps(1, end) forwards !important; }
+
 /* ── Neon flicker ────────────────────────────────────────────────── */
 @keyframes neon-flicker {
   0%,18%,22%,25%,53%,57%,100% { opacity: 1; }

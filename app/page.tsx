@@ -7,7 +7,8 @@ import BoxCard from '@/components/BoxCard';
 import BoxOpener from '@/components/BoxOpener';
 import ListHeader from '@/components/ListHeader';
 import HudPanel from '@/components/HudPanel';
-import MatrixBackground from '@/components/MatrixBackground';
+import MatrixBackground   from '@/components/MatrixBackground';
+import GlitchTextSystem   from '@/components/GlitchTextSystem';
 import { launchOrb }       from '@/utils/orbEffect';
 import { launchLightning } from '@/utils/lightningEffect';
 import { triggerDestruction } from '@/utils/destroyEffect';
@@ -261,6 +262,9 @@ export default function Home() {
     <>
       {/* ── Matrix Background ───────────────────────────────────── */}
       <MatrixBackground />
+
+      {/* ── Random text glitch / connection-failure effect ──────── */}
+      <GlitchTextSystem />
 
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="pt-10 pb-6 text-center relative z-10 w-full">
