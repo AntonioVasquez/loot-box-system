@@ -77,7 +77,7 @@ export function launchOrb(
   const sparkR      = Array.from({ length: SPARK_COUNT }, () => 14 + Math.random() * 6);
 
   const DURATION = 820;
-  const t0       = Date.now();
+  const t0       = performance.now();   // ← MUST match rAF timestamp (not Date.now)
 
   /* ── Phase 1: launch ring ─────────────────────────────────────── */
   let launchRing = 0;
@@ -239,7 +239,7 @@ export function launchOrb(
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   IMPACT BURST
+   IMPACT BURST  — time-based (consistent at any frame rate)
    ═══════════════════════════════════════════════════════════════════ */
 function playImpact(
   ctx: CanvasRenderingContext2D,
@@ -249,98 +249,112 @@ function playImpact(
   onDone: () => void,
 ) {
   const [r, g, b] = color;
-  const cssA = (a: number) => `rgba(${r},${g},${b},${Math.max(0,a)})`;
+  const cssA = (a: number) => `rgba(${r},${g},${b},${Math.max(0, a)})`;
 
-  /* Tiny impact particles */
-  const sparks = Array.from({ length: 14 }, () => {
+  const IMPACT_DURATION = 600;   // ms — fixed regardless of frame rate
+  const impactT0 = performance.now();
+
+  /* More sparks, wider spread */
+  const sparks = Array.from({ length: 22 }, () => {
     const angle = Math.random() * Math.PI * 2;
-    const spd   = 2 + Math.random() * 5;
+    const spd   = 3 + Math.random() * 7;
     return {
       x, y,
       vx: Math.cos(angle) * spd,
       vy: Math.sin(angle) * spd,
       life: 1,
-      size: 1.5 + Math.random() * 3,
+      decay: 0.03 + Math.random() * 0.02,
+      size: 2 + Math.random() * 4,
     };
   });
 
-  let ring1 = 0, ring2 = 0;
-  let flashA = 0.8;
-  let frame  = 0;
-  const FRAMES = 35;
+  /* Expanding energy rings */
+  const rings = [
+    { r: 0, speed: 9,  maxR: 110, lw: 5,   white: false },
+    { r: 0, speed: 13, maxR: 150, lw: 2.5, white: true  },
+    { r: 0, speed: 6,  maxR: 80,  lw: 3,   white: false },
+  ];
 
-  const burst = () => {
-    frame++;
-    if (frame > FRAMES) { onDone(); return; }
+  let flashA = 0.9;
+
+  const burst = (now: number) => {
+    const elapsed = now - impactT0;
+    const t = Math.min(elapsed / IMPACT_DURATION, 1);
+
+    if (t >= 1) { onDone(); return; }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const t = frame / FRAMES;
-
-    /* Flash */
+    /* ── White flash ──────────────────────────────────────────────── */
     if (flashA > 0.01) {
-      ctx.fillStyle = cssA(flashA);
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, 55 * (1 - t * 0.5));
+      gr.addColorStop(0,   `rgba(255,255,255,${flashA})`);
+      gr.addColorStop(0.5, cssA(flashA * 0.7));
+      gr.addColorStop(1,   cssA(0));
       ctx.beginPath();
-      ctx.arc(x, y, 40 * (1 - t * 0.5), 0, Math.PI * 2);
+      ctx.arc(x, y, 55 * (1 - t * 0.5), 0, Math.PI * 2);
+      ctx.fillStyle = gr;
       ctx.fill();
-      flashA *= 0.72;
+      flashA *= 0.68;
     }
 
-    /* Shockwave 1 */
-    ring1 += 7;
-    const a1 = Math.max(0, 1 - ring1 / 90);
-    ctx.beginPath();
-    ctx.arc(x, y, ring1, 0, Math.PI * 2);
-    ctx.strokeStyle = cssA(a1 * 0.9);
-    ctx.lineWidth   = 4;
-    ctx.shadowBlur  = 20;
-    ctx.shadowColor = `rgb(${r},${g},${b})`;
-    ctx.stroke();
-
-    /* Shockwave 2 (delayed) */
-    if (frame > 6) {
-      ring2 += 9;
-      const a2 = Math.max(0, 1 - ring2 / 110);
+    /* ── Expanding shockwave rings ────────────────────────────────── */
+    rings.forEach((ring, i) => {
+      if (elapsed < i * 80) return;   // stagger ring launches
+      ring.r = Math.min(ring.r + ring.speed, ring.maxR);
+      const alpha = Math.max(0, 1 - ring.r / ring.maxR);
       ctx.beginPath();
-      ctx.arc(x, y, ring2, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255,255,255,${a2 * 0.5})`;
-      ctx.lineWidth   = 2;
+      ctx.arc(x, y, ring.r, 0, Math.PI * 2);
+      if (ring.white) {
+        ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.6})`;
+      } else {
+        ctx.strokeStyle = cssA(alpha * 0.95);
+        ctx.shadowBlur  = 22;
+        ctx.shadowColor = `rgb(${r},${g},${b})`;
+      }
+      ctx.lineWidth = ring.lw;
       ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
+      ctx.shadowBlur = 0;
+    });
 
-    /* Sparks */
+    /* ── Sparks with gravity ──────────────────────────────────────── */
     sparks.forEach(s => {
-      s.x += s.vx; s.y += s.vy;
-      s.vy += 0.1;
-      s.life -= 0.04;
+      s.x   += s.vx;
+      s.y   += s.vy;
+      s.vy  += 0.15;           // gravity
+      s.vx  *= 0.98;           // drag
+      s.life = Math.max(0, s.life - s.decay);
       if (s.life <= 0) return;
 
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-      ctx.fillStyle   = cssA(s.life * 0.9);
-      ctx.shadowBlur  = 8;
+      ctx.fillStyle   = cssA(s.life * 0.95);
+      ctx.shadowBlur  = 10;
       ctx.shadowColor = `rgb(${r},${g},${b})`;
       ctx.fill();
       ctx.shadowBlur  = 0;
     });
 
-    /* Mini cross/star at impact centre */
+    /* ── Cross arms (first 40% of impact) ─────────────────────────── */
     if (t < 0.4) {
-      const armLen = 20 * (1 - t / 0.4);
+      const progress = 1 - t / 0.4;
+      const armLen   = 28 * progress;
+      ctx.shadowBlur  = 18;
+      ctx.shadowColor = `rgb(${r},${g},${b})`;
       for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI;
+        const angle = (i / 4) * Math.PI;
         ctx.beginPath();
-        ctx.moveTo(x - Math.cos(a) * armLen, y - Math.sin(a) * armLen);
-        ctx.lineTo(x + Math.cos(a) * armLen, y + Math.sin(a) * armLen);
-        ctx.strokeStyle = cssA(0.8 * (1 - t / 0.4));
-        ctx.lineWidth   = 2;
+        ctx.moveTo(x - Math.cos(angle) * armLen, y - Math.sin(angle) * armLen);
+        ctx.lineTo(x + Math.cos(angle) * armLen, y + Math.sin(angle) * armLen);
+        ctx.strokeStyle = cssA(0.9 * progress);
+        ctx.lineWidth   = 2.5;
         ctx.stroke();
       }
+      ctx.shadowBlur = 0;
     }
 
     requestAnimationFrame(burst);
   };
 
-  burst();
+  requestAnimationFrame(burst);
 }

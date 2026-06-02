@@ -42,6 +42,11 @@ export default function Home() {
   /**
    * Runs AFTER the DOM has painted the new card (useEffect = post-render).
    * This is more reliable than setTimeout(60ms).
+   *
+   * Timeline: orb flight 820ms + impact ~580ms = ~1400ms total.
+   * Safety fires at 2500ms so it never races with the animation.
+   * `alive` guard ensures reveal() only executes once even if both
+   * the animation callback and the safety timer fire close together.
    */
   useEffect(() => {
     if (!pendingOrb) return;
@@ -50,20 +55,23 @@ export default function Home() {
     // Find the hidden card in the grid
     const cardEl = document.querySelector<HTMLElement>(`[data-item-id="${targetId}"]`);
 
+    let alive = true;   // guard: only the first reveal() wins
     const reveal = (materialize: boolean) => {
+      if (!alive) return;
+      alive = false;
       if (safetyRef.current) { clearTimeout(safetyRef.current); safetyRef.current = null; }
       setHiddenItemId(null);
       if (materialize) {
         setMaterializeId(targetId);
-        setTimeout(() => setMaterializeId(null), 700);
+        setTimeout(() => setMaterializeId(null), 900);   // animation is 780ms
       }
       setPendingOrb(null);
     };
 
     if (!cardEl) { reveal(false); return; }
 
-    // Safety: always reveal after 1.4 s even if the canvas animation stalls
-    safetyRef.current = setTimeout(() => reveal(false), 1400);
+    // Safety: reveal at 2500ms so it never races with the 820+580ms animation
+    safetyRef.current = setTimeout(() => reveal(false), 2500);
 
     const cardRect = cardEl.getBoundingClientRect();
 
