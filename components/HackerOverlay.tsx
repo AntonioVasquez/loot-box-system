@@ -551,7 +551,7 @@ export default function HackerOverlay() {
           left:          '20px',
           width:         '380px',
           maxHeight:     '240px',
-          zIndex:        3,
+          zIndex:        1,
           pointerEvents: 'none',
         }}
       >
