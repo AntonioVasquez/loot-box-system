@@ -20,9 +20,101 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/* ── Char / word pools ─────────────────────────────────────────────── */
+/* ── Char pool ─────────────────────────────────────────────────────── */
 const HACKER_CHARS = '01▓░▒█◆◇⌬⌭⊕⊗■□ABCDEFabcdef0x{}[]<>/\\'.split('');
-const DANGER_WORDS = ['⚠ PELIGRO ⚠', '⚠ DANGER ⚠', 'ALERTA', 'ALERT', '🚨 INTRUSO 🚨'];
+
+/* ── Hack scripts — random terminals that pop during danger mode ───── */
+const HACK_SCRIPTS: { title: string; lines: string[] }[] = [
+  {
+    title: 'bash — /tmp/exploit.py',
+    lines: [
+      '$ python3 /tmp/exploit.py --target nexus',
+      '[*] Initializing CVE-2024-3882...',
+      '[*] Connecting to 10.0.0.14:22...',
+      '[+] Handshake complete',
+      '[*] Injecting shellcode payload...',
+      '[+] SHELL OBTAINED → /bin/bash#',
+    ],
+  },
+  {
+    title: 'root@kali — priv_esc.sh',
+    lines: [
+      '$ ./privilege_escalation.sh',
+      '[!] Checking SUID binaries...',
+      '[+] Found: /usr/bin/python3',
+      '[*] Spawning root shell...',
+      '[+] uid=0(root) gid=0(root)',
+      '[+] ROOT SHELL ACTIVE',
+    ],
+  },
+  {
+    title: 'nmap — network scan',
+    lines: [
+      '$ nmap -sS -O 10.0.0.0/24',
+      'Starting Nmap 7.94...',
+      'Host: 10.0.0.14 [UP]',
+      'Ports: 22/ssh  80/http  3306/mysql',
+      'OS: Linux 5.15 (96% confidence)',
+      'Scan done: 1 host up.',
+    ],
+  },
+  {
+    title: 'meterpreter — session 1',
+    lines: [
+      'msf6 > use multi/handler',
+      '[*] Starting payload handler...',
+      '[*] Session 1 opened (NEXUS)',
+      'meterpreter > getuid',
+      'Server username: root',
+      'meterpreter > hashdump',
+      '[+] Hashes dumped → /tmp/.out',
+    ],
+  },
+  {
+    title: 'bash — data_exfil.sh',
+    lines: [
+      '$ ./exfiltrate.sh --db nexus_prod',
+      '[*] Locating target tables...',
+      '[*] Found 2,847 records',
+      '[*] Encrypting with RSA-4096...',
+      '[*] Uploading → 185.220.101.47...',
+      '[+] Transfer OK — 2,847 records',
+    ],
+  },
+  {
+    title: 'bash — persistence.sh',
+    lines: [
+      '$ ./install_persistence.sh',
+      '[*] Writing to /etc/crontab...',
+      '[*] Modifying /etc/rc.local...',
+      '[*] Deploying RAT on port 4444...',
+      '[+] Backdoor active',
+      '[+] Persistence: ESTABLISHED',
+    ],
+  },
+  {
+    title: 'ssh — lateral movement',
+    lines: [
+      '$ ssh -i /tmp/stolen.key root@10.0.0.25',
+      'Warning: host permanently added.',
+      'root@db-server:~# id',
+      'uid=0(root) gid=0(root)',
+      'root@db-server:~# ls /etc/shadow',
+      '[+] Credentials found: 14 hashes',
+    ],
+  },
+  {
+    title: 'python3 — keylogger.py',
+    lines: [
+      '$ python3 keylogger.py --silent',
+      '[*] Hooking keyboard events...',
+      '[*] Logging to /tmp/.klog',
+      '[+] Keylogger active  PID 8472',
+      '[*] Intercepted 127 keystrokes',
+      '[*] Sending to C2 server...',
+    ],
+  },
+];
 
 /* ── Terminal command pools — OUTSIDE component (no recreación en render) */
 const MONITORING_COMMANDS = [
@@ -83,9 +175,15 @@ interface CodeRain {
   x: number; y: number;
   speed: number; char: string; color: string;
 }
-interface WarningText {
-  x: number; y: number;
-  text: string; life: number; decay: number;
+
+interface TerminalPopup {
+  id:      string;
+  title:   string;
+  lines:   string[];
+  visible: number;    // how many lines are shown so far
+  closing: boolean;
+  x:       number;
+  y:       number;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -122,41 +220,6 @@ function drawCodeRain(
   ctx.globalAlpha = 1;
 }
 
-function drawDangerWarnings(
-  ctx: CanvasRenderingContext2D, vw: number, vh: number,
-  warnings: WarningText[], masterOpacity: number, isDanger: boolean,
-) {
-  if (!isDanger) return;
-  if (Math.random() < 0.15 && warnings.length < 8) {
-    warnings.push({
-      x:     Math.random() * vw * 0.8 + vw * 0.1,
-      y:     Math.random() * vh,
-      text:  DANGER_WORDS[Math.floor(Math.random() * DANGER_WORDS.length)],
-      life:  1,
-      decay: 0.008 + Math.random() * 0.012,
-    });
-  }
-  for (let i = warnings.length - 1; i >= 0; i--) {
-    const w = warnings[i];
-    w.life -= w.decay;
-    if (w.life <= 0) { warnings.splice(i, 1); continue; }
-    const pulse = 0.5 + 0.5 * Math.sin(w.life * Math.PI * 3);
-    const a     = w.life * pulse * masterOpacity;
-    ctx.globalAlpha = a;
-    ctx.font        = 'bold 28px "Courier New", monospace';
-    ctx.fillStyle   = `rgba(255,50,50,${a})`;
-    ctx.shadowBlur  = 30;
-    ctx.shadowColor = `rgba(255,50,50,${a})`;
-    ctx.textAlign   = 'center';
-    ctx.fillText(w.text,
-      w.x + (Math.random() - 0.5) * 8,
-      w.y + (Math.random() - 0.5) * 8,
-    );
-    ctx.shadowBlur = 0;
-    ctx.textAlign  = 'left';
-  }
-  ctx.globalAlpha = 1;
-}
 
 function drawDangerOverlay(
   ctx: CanvasRenderingContext2D, vw: number, vh: number,
@@ -288,13 +351,13 @@ export default function HackerOverlay() {
   const imageWrapRef = useRef<HTMLDivElement>(null);
 
   /* Instance-scoped arrays — NOT module globals */
-  const codeRainRef    = useRef<CodeRain[]>([]);
-  const warningTextsRef = useRef<WarningText[]>([]);
-  const isDangerRef    = useRef(false);   // for canvas logic (no re-render)
+  const codeRainRef = useRef<CodeRain[]>([]);
+  const isDangerRef = useRef(false);   // for canvas logic (no re-render)
 
   /* React state only for UI elements */
-  const [isDanger, setIsDanger]       = useState(false);
-  const [imageOpacity, setImageOpacity] = useState(0);  // driven by show()/end only
+  const [isDanger,      setIsDanger]      = useState(false);
+  const [imageOpacity,  setImageOpacity]  = useState(0);
+  const [terminals,     setTerminals]     = useState<TerminalPopup[]>([]);
 
   /* ── Typewriter state ──────────────────────────────────────────── */
   const [terminalLines, setTerminalLines] = useState<string[]>([
@@ -357,14 +420,12 @@ export default function HackerOverlay() {
       drawLightBurst(ctx, vw, vh, mo, t);
       drawTransitionGlitch(ctx, vw, vh, mo, t);
       drawMatrixDissolution(ctx, vw, vh, mo, t);
-      drawDangerWarnings(ctx, vw, vh, warningTextsRef.current, mo, isDangerRef.current);
 
       if (t < 1) {
         animId = requestAnimationFrame(animate);
       } else {
         running = false;
-        codeRainRef.current.length    = 0;
-        warningTextsRef.current.length = 0;
+        codeRainRef.current.length = 0;
         isDangerRef.current = false;
         setIsDanger(false);
         setImageOpacity(0);
@@ -376,8 +437,7 @@ export default function HackerOverlay() {
       if (running) return;
       running   = true;
       startTime = performance.now();
-      codeRainRef.current.length    = 0;
-      warningTextsRef.current.length = 0;
+      codeRainRef.current.length = 0;
       isDangerRef.current = false;
       setImageOpacity(1);
       /* Reset terminal */
@@ -447,6 +507,77 @@ export default function HackerOverlay() {
       return () => clearTimeout(timer);
     }
   }, [typingLine, typingTarget, isDanger]);
+
+  /* ── Hack terminal popups — appear/disappear during danger mode ──── */
+  useEffect(() => {
+    if (!isDanger) {
+      /* Danger ended → close all open terminals */
+      setTerminals(prev => prev.map(t => ({ ...t, closing: true })));
+      const clear = setTimeout(() => setTerminals([]), 380);
+      return () => clearTimeout(clear);
+    }
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let spawnCount = 0;
+    const MAX_SPAWNS = 3;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    /* Positions spread around edges — avoid center where hacker image is */
+    const POSITIONS = [
+      { x: 12,          y: 90          },   // top-left
+      { x: vw - 330,    y: 90          },   // top-right
+      { x: 12,          y: vh - 230    },   // bottom-left
+      { x: vw - 330,    y: vh - 230    },   // bottom-right
+      { x: 12,          y: vh / 2 - 90 },   // mid-left
+      { x: vw - 330,    y: vh / 2 - 90 },   // mid-right
+    ];
+
+    const spawnTerminal = () => {
+      if (spawnCount >= MAX_SPAWNS) return;
+
+      const script = HACK_SCRIPTS[Math.floor(Math.random() * HACK_SCRIPTS.length)];
+      const id     = `ht-${Date.now()}-${spawnCount}`;
+      const base   = POSITIONS[spawnCount % POSITIONS.length];
+      const pos    = { x: base.x + (Math.random() - 0.5) * 18, y: base.y + (Math.random() - 0.5) * 18 };
+      spawnCount++;
+
+      setTerminals(prev => [
+        ...prev.slice(-2),   // never more than 3 at once
+        { id, title: script.title, lines: script.lines, visible: 0, closing: false, x: pos.x, y: pos.y },
+      ]);
+
+      /* Reveal lines one by one */
+      script.lines.forEach((_, li) => {
+        const t = setTimeout(() => {
+          setTerminals(prev => prev.map(term =>
+            term.id === id ? { ...term, visible: li + 1 } : term,
+          ));
+        }, (li + 1) * (170 + Math.random() * 80));
+        timers.push(t);
+      });
+
+      /* Auto-close terminal */
+      const closeAt = script.lines.length * 250 + 1600 + Math.random() * 1400;
+      const closeT  = setTimeout(() => {
+        setTerminals(prev => prev.map(t => t.id === id ? { ...t, closing: true } : t));
+        const rmT = setTimeout(() => setTerminals(prev => prev.filter(t => t.id !== id)), 360);
+        timers.push(rmT);
+      }, closeAt);
+      timers.push(closeT);
+
+      /* Schedule next spawn */
+      if (spawnCount < MAX_SPAWNS) {
+        const nextT = setTimeout(spawnTerminal, 1800 + Math.random() * 2000);
+        timers.push(nextT);
+      }
+    };
+
+    const init = setTimeout(spawnTerminal, 300 + Math.random() * 400);
+    timers.push(init);
+
+    return () => timers.forEach(clearTimeout);
+  }, [isDanger]);
 
   /* ── JSX ─────────────────────────────────────────────────────────── */
   return (
@@ -578,10 +709,96 @@ export default function HackerOverlay() {
         </div>
       </div>
 
+      {/* ── Hack terminal popups ───────────────────────────────────── */}
+      {terminals.map(term => (
+        <div key={term.id} style={{
+          position:       'fixed',
+          left:           `${term.x}px`,
+          top:            `${term.y}px`,
+          width:          '308px',
+          zIndex:         60,
+          pointerEvents:  'none',
+          fontFamily:     '"Courier New", monospace',
+          animation:      term.closing
+            ? 'hackTermOut 0.32s ease-in forwards'
+            : 'hackTermIn  0.28s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        }}>
+          <div style={{
+            background:   'rgba(0,6,2,0.97)',
+            border:       '1px solid rgba(0,220,80,0.45)',
+            borderRadius: '5px',
+            overflow:     'hidden',
+            boxShadow:    '0 0 22px rgba(0,200,70,0.18), 0 0 6px rgba(0,200,70,0.10), inset 0 0 14px rgba(0,200,70,0.04)',
+          }}>
+            {/* Title bar */}
+            <div style={{
+              display:        'flex',
+              alignItems:     'center',
+              gap:            6,
+              padding:        '5px 10px',
+              background:     'rgba(0,30,12,0.95)',
+              borderBottom:   '1px solid rgba(0,180,60,0.20)',
+            }}>
+              {/* Traffic lights */}
+              {['#ff5f57','#febc2e','#28c840'].map((c, i) => (
+                <span key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: c, flexShrink: 0, opacity: 0.85 }} />
+              ))}
+              <span style={{ fontSize: 9, color: 'rgba(0,220,80,0.55)', letterSpacing: '0.12em', marginLeft: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                {term.title}
+              </span>
+            </div>
+
+            {/* Output lines */}
+            <div style={{ padding: '7px 10px 8px', minHeight: 40 }}>
+              {term.lines.slice(0, term.visible).map((line, i) => (
+                <div key={i} style={{
+                  fontSize:     10,
+                  lineHeight:   '1.55',
+                  marginBottom: 1,
+                  color:
+                    line.startsWith('$') || line.startsWith('msf6') || line.startsWith('meterpreter') ? '#00ff00' :
+                    line.includes('[+]') ? '#00ffaa' :
+                    line.includes('[*]') ? '#00cc88' :
+                    line.includes('[!]') ? '#ffaa00' :
+                    line.includes('[-]') ? '#ff5555' :
+                    '#00bb44',
+                  textShadow:
+                    line.includes('[+]') ? '0 0 8px rgba(0,255,170,0.6)' :
+                    line.includes('[!]') ? '0 0 8px rgba(255,170,0,0.5)' :
+                    '0 0 5px rgba(0,200,80,0.4)',
+                }}>
+                  {line}
+                </div>
+              ))}
+              {/* Blinking cursor on the last visible line */}
+              {term.visible > 0 && term.visible < term.lines.length && (
+                <span style={{
+                  display:    'inline-block',
+                  width:      6, height: 11,
+                  background: '#00ff00',
+                  marginLeft: 2,
+                  animation:  'termBlink 0.7s step-end infinite',
+                  boxShadow:  '0 0 6px rgba(0,255,0,0.7)',
+                  verticalAlign: 'middle',
+                }} />
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
       <style>{`
         @keyframes termBlink {
           0%, 49% { opacity: 1; }
           50%, 100% { opacity: 0.15; }
+        }
+        @keyframes hackTermIn {
+          from { opacity: 0; transform: scale(0.84) translateY(10px); filter: blur(4px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0); }
+        }
+        @keyframes hackTermOut {
+          from { opacity: 1; transform: scale(1)    translateY(0);     filter: blur(0); }
+          to   { opacity: 0; transform: scale(0.88) translateY(-8px);  filter: blur(4px); }
         }
       `}</style>
     </>
