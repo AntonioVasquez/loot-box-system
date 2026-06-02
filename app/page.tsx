@@ -10,6 +10,9 @@ import HudPanel from '@/components/HudPanel';
 import MatrixBackground   from '@/components/MatrixBackground';
 import GlitchTextSystem   from '@/components/GlitchTextSystem';
 import HackerOverlay      from '@/components/HackerOverlay';
+import SystemVitalsBar    from '@/components/SystemVitalsBar';
+import IntrusionToasts    from '@/components/IntrusionToasts';
+import NexusStatus        from '@/components/NexusStatus';
 import { launchOrb }       from '@/utils/orbEffect';
 import { launchLightning } from '@/utils/lightningEffect';
 import { triggerDestruction } from '@/utils/destroyEffect';
@@ -264,7 +267,10 @@ export default function Home() {
       {/* ── Matrix Background ───────────────────────────────────── */}
       <MatrixBackground />
 
-      {/* ── Random text glitch / connection-failure effect ──────── */}
+      {/* ── Ambient OS vulnerability effects ───────────────────── */}
+      <SystemVitalsBar />
+      <IntrusionToasts />
+      <NexusStatus />
       <GlitchTextSystem />
 
       {/* ── Hacker overlay (cascade glitch background effect) ───── */}

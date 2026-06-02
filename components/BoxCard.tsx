@@ -2,7 +2,12 @@
 
 import { BoxItem, RarityType, RARITY_CONFIG } from '@/types';
 import Image from 'next/image';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+
+type ScanState = 'idle' | 'scanning' | 'secure' | 'vuln';
+
+const VULN_IDS = ['CVE-2024-3882','CVE-2024-1971','CVE-2023-44487','CVE-2024-6387'];
+
 
 interface BoxCardProps {
   item: BoxItem;
@@ -22,10 +27,29 @@ const RARITY_VISUAL: Record<RarityType, {
 };
 
 export default function BoxCard({ item, onDelete, showDelete = false, isResult = false }: BoxCardProps) {
-  const conf = RARITY_CONFIG[item.rarity];
-  const visual = RARITY_VISUAL[item.rarity];
+  const conf    = RARITY_CONFIG[item.rarity];
+  const visual  = RARITY_VISUAL[item.rarity];
   const isImage = item.identifierType === 'imagen' && item.imageUrl;
   const cardRef = useRef<HTMLDivElement>(null);
+
+  /* ── Scan overlay state ────────────────────────────────────────── */
+  const [scan, setScan]       = useState<ScanState>('idle');
+  const scanTimers            = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const vulnId                = useRef(VULN_IDS[Math.floor(Math.random() * VULN_IDS.length)]);
+
+
+  const onMouseEnter = () => {
+    if (scan !== 'idle' || isResult || Math.random() > 0.28) return;
+    setScan('scanning');
+    const t1 = setTimeout(() => {
+      const isVuln = Math.random() < 0.18;
+      if (isVuln) vulnId.current = VULN_IDS[Math.floor(Math.random() * VULN_IDS.length)];
+      setScan(isVuln ? 'vuln' : 'secure');
+      const t2 = setTimeout(() => setScan('idle'), 1300);
+      scanTimers.current.push(t2);
+    }, 950);
+    scanTimers.current.push(t1);
+  };
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = cardRef.current;
@@ -48,6 +72,7 @@ export default function BoxCard({ item, onDelete, showDelete = false, isResult =
   return (
     <div
       ref={cardRef}
+      onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       className={[
@@ -65,6 +90,76 @@ export default function BoxCard({ item, onDelete, showDelete = false, isResult =
           : `0 4px 24px rgba(0,0,0,0.6)`,
       }}
     >
+      {/* ── Node scan overlay ──────────────────────────────────── */}
+      {scan !== 'idle' && (
+        <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden rounded-xl">
+          {/* Scan sweep line */}
+          {scan === 'scanning' && (
+            <div className="node-scan-line" style={{
+              position:   'absolute',
+              left: 0, right: 0,
+              height:     2,
+              background: `linear-gradient(90deg, transparent, ${conf.color}, white, ${conf.color}, transparent)`,
+              boxShadow:  `0 0 10px ${conf.color}, 0 0 20px ${conf.color}60`,
+            }} />
+          )}
+          {/* SCANNING label */}
+          {scan === 'scanning' && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.30)',
+            }}>
+              <span style={{
+                fontFamily:    '"Courier New",monospace',
+                fontSize:      9,
+                fontWeight:    'bold',
+                letterSpacing: '0.3em',
+                color:         conf.color,
+                textShadow:    `0 0 12px ${conf.color}`,
+                textTransform: 'uppercase',
+                animation:     'delete-warning-pulse 0.6s ease-in-out infinite',
+              }}>
+                SCANNING NODE…
+              </span>
+            </div>
+          )}
+          {/* Result overlay */}
+          {(scan === 'secure' || scan === 'vuln') && (
+            <div style={{
+              position:   'absolute', inset: 0,
+              display:    'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 4,
+              background: scan === 'vuln' ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.10)',
+              border:     `1px solid ${scan === 'vuln' ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.4)'}`,
+              borderRadius: 12,
+            }}>
+              <span style={{
+                fontFamily:    '"Courier New",monospace',
+                fontSize:      10,
+                fontWeight:    'bold',
+                letterSpacing: '0.25em',
+                color:         scan === 'vuln' ? '#f87171' : '#4ade80',
+                textShadow:    `0 0 14px ${scan === 'vuln' ? '#ef4444' : '#22c55e'}`,
+                textTransform: 'uppercase',
+              }}>
+                {scan === 'vuln' ? '⚠ VULN FOUND' : '✓ NODE SECURED'}
+              </span>
+              {scan === 'vuln' && (
+                <span style={{
+                  fontFamily:    '"Courier New",monospace',
+                  fontSize:      8,
+                  color:         'rgba(248,113,113,0.7)',
+                  letterSpacing: '0.15em',
+                }}>
+                  {vulnId.current}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* HUD corners */}
       <span style={cornerStyle({ top: -1, left: -1,  borderWidth: '1.5px 0 0 1.5px', borderRadius: '3px 0 0 0' })} />
       <span style={cornerStyle({ top: -1, right: -1, borderWidth: '1.5px 1.5px 0 0', borderRadius: '0 3px 0 0' })} />

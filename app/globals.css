@@ -445,6 +445,17 @@
    UTILITY CLASSES
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Node scan line sweep (BoxCard hover) ────────────────────────── */
+@keyframes node-scan-sweep {
+  0%   { top: -3px;   opacity: 0; }
+  4%   { opacity: 1; }
+  96%  { opacity: 1; }
+  100% { top: calc(100% + 3px); opacity: 0; }
+}
+.node-scan-line {
+  animation: node-scan-sweep 0.90s linear forwards;
+}
+
 .animate-float       { animation: float       3s ease-in-out infinite; }
 .animate-glow        { animation: glow        2.4s ease-in-out infinite; }
 .animate-spin-slow   { animation: spin-slow  20s linear infinite; }
