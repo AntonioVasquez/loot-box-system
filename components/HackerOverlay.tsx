@@ -358,6 +358,14 @@ export default function HackerOverlay() {
   const [isDanger,      setIsDanger]      = useState(false);
   const [imageOpacity,  setImageOpacity]  = useState(0);
   const [terminals,     setTerminals]     = useState<TerminalPopup[]>([]);
+  const [isMobile,      setIsMobile]      = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   /* ── Typewriter state ──────────────────────────────────────────── */
   const [terminalLines, setTerminalLines] = useState<string[]>([
@@ -629,9 +637,12 @@ export default function HackerOverlay() {
       <div
         style={{
           position:      'fixed',
-          top:           '28px',   /* below vitals bar (~24px) */
-          left:          '8px',
-          width:         'min(360px, calc(100vw - 16px))',
+          /* Mobile: bottom-left above NexusStatus, so it never covers main content */
+          /* Desktop: top-left below the vitals bar */
+          ...(isMobile
+            ? { bottom: '46px', left: '8px' }
+            : { top: '28px',   left: '8px'  }),
+          width:         isMobile ? '200px' : 'min(360px, calc(100vw - 16px))',
           zIndex:        1,
           pointerEvents: 'none',
         }}
@@ -641,10 +652,10 @@ export default function HackerOverlay() {
             background:   'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,20,10,0.92) 100%)',
             border:       isDanger ? '2px solid #ff3333' : '2px solid #00ff00',
             borderRadius: '4px',
-            padding:      '12px 14px',
+            padding:      isMobile ? '7px 10px' : '12px 14px',
             fontFamily:   '"Courier New", monospace',
-            fontSize:     '11px',
-            lineHeight:   '1.6',
+            fontSize:     isMobile ? '9px' : '11px',
+            lineHeight:   '1.5',
             color:        isDanger ? '#ff6666' : '#00ff00',
             boxShadow:    isDanger
               ? '0 0 20px rgba(255,50,50,0.8), inset 0 0 10px rgba(255,50,50,0.2)'
@@ -674,9 +685,10 @@ export default function HackerOverlay() {
             </span>
           </div>
 
-          {/* Completed lines */}
-          <div style={{ maxHeight: '160px', overflow: 'hidden' }}>
-            {terminalLines.map((line, idx) => (
+          {/* Completed lines — fewer on mobile */}
+          <div style={{ maxHeight: isMobile ? '72px' : '160px', overflow: 'hidden' }}>
+            {/* On mobile, only show last 4 lines */}
+            {(isMobile ? terminalLines.slice(-4) : terminalLines).map((line, idx) => (
               <div key={idx} style={{
                 marginBottom: '1px',
                 color: isDanger

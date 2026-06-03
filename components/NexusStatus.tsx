@@ -48,20 +48,18 @@ const INITIAL: Service[] = [
 ];
 
 export default function NexusStatus() {
-  const [services,   setServices]   = useState<Service[]>(INITIAL);
-  // Start minimized on mobile to save screen space
-  const [minimized,  setMinimized]  = useState(() =>
-    typeof window !== 'undefined' && window.innerWidth < 768
-  );
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.innerWidth < 768
-  );
+  const [services,  setServices]  = useState<Service[]>(INITIAL);
+  const [minimized, setMinimized] = useState(false); // set by useEffect below
+  const [isMobile,  setIsMobile]  = useState(false); // set by useEffect below
 
+  /* Must use useEffect — window is undefined during SSR */
   useEffect(() => {
     const check = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
+      setMinimized(mobile);   // auto-minimise on mobile
     };
+    check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
