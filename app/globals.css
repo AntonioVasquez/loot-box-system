@@ -29,6 +29,8 @@
 @layer base {
   body {
     @apply bg-background-dark text-gray-200 font-body antialiased min-h-screen flex flex-col selection:bg-primary selection:text-white;
+    -webkit-tap-highlight-color: transparent;  /* remove blue flash on tap */
+    overscroll-behavior-y: none;               /* prevent pull-to-refresh on content */
     background-image:
       /* radial orbs */
       radial-gradient(ellipse at 10% 10%, rgba(168,85,247,0.14) 0%, transparent 50%),

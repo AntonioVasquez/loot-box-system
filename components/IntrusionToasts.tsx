@@ -99,7 +99,7 @@ export default function IntrusionToasts() {
         display:       'flex',
         flexDirection: 'column',
         gap:           8,
-        width:         320,
+        width:         'min(320px, calc(100vw - 24px))',
       }}>
         {toasts.map(toast => {
           const s = TYPE_STYLE[toast.type];

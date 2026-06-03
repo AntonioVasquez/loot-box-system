@@ -49,7 +49,22 @@ const INITIAL: Service[] = [
 
 export default function NexusStatus() {
   const [services,   setServices]   = useState<Service[]>(INITIAL);
-  const [minimized,  setMinimized]  = useState(false);
+  // Start minimized on mobile to save screen space
+  const [minimized,  setMinimized]  = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+    };
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const patch = (id: string, status: Status) =>
@@ -92,10 +107,10 @@ export default function NexusStatus() {
   return (
     <div style={{
       position:       'fixed',
-      bottom:         20,
-      right:          16,
+      bottom:         isMobile ? 8  : 20,
+      right:          isMobile ? 8  : 16,
       zIndex:         100,
-      width:          215,
+      width:          isMobile ? 160 : 215,
       fontFamily:     '"Courier New",monospace',
       userSelect:     'none',
     }}>

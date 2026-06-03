@@ -58,10 +58,18 @@ function miniBar(pct: number, color: string) {
 }
 
 export default function SystemVitalsBar() {
-  const [vitals, setVitals] = useState<Vitals>({ cpu: 34, mem: 28, net: 22, threat: 'LOW' });
-  const [clock,  setClock]  = useState('');
+  const [vitals,   setVitals]   = useState<Vitals>({ cpu: 34, mem: 28, net: 22, threat: 'LOW' });
+  const [clock,    setClock]    = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   const attackRef = useRef(false);
   const timers    = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   /* Clock — updates every second */
   useEffect(() => {
@@ -123,74 +131,77 @@ export default function SystemVitalsBar() {
       pointerEvents:  'none',
       display:        'flex',
       alignItems:     'center',
-      gap:            16,
-      padding:        '3px 14px',
+      gap:            isMobile ? 10 : 16,
+      padding:        isMobile ? '3px 10px' : '3px 14px',
       background:     'rgba(2,1,10,0.92)',
       borderBottom:   `1px solid ${crit ? 'rgba(239,68,68,0.25)' : 'rgba(168,85,247,0.10)'}`,
       backdropFilter: 'blur(8px)',
       transition:     'border-color 600ms',
       userSelect:     'none',
+      minHeight:      24,
     }}>
-      {/* Identifier */}
-      <span style={{
-        fontFamily:    '"Courier New",monospace',
-        fontSize:      8,
-        color:         'rgba(168,85,247,0.45)',
-        letterSpacing: '0.22em',
-        textTransform: 'uppercase',
-        marginRight:   2,
-      }}>
-        NEXUS·SYS
-      </span>
+      {/* Identifier — hidden on mobile */}
+      {!isMobile && (
+        <span style={{
+          fontFamily:    '"Courier New",monospace',
+          fontSize:      8,
+          color:         'rgba(168,85,247,0.45)',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          marginRight:   2,
+        }}>
+          NEXUS·SYS
+        </span>
+      )}
 
-      {[
+      {/* Bars — hidden on mobile, show only % labels */}
+      {!isMobile && [
         { label: 'CPU', val: vitals.cpu, color: cpuC },
         { label: 'MEM', val: vitals.mem, color: memC },
         { label: 'NET', val: vitals.net, color: netC },
       ].map(({ label, val, color }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{
-            fontFamily:    '"Courier New",monospace',
-            fontSize:      8,
-            color:         'rgba(255,255,255,0.22)',
-            letterSpacing: '0.15em',
-          }}>
+          <span style={{ fontFamily: '"Courier New",monospace', fontSize: 8, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.15em' }}>
             {label}
           </span>
           {miniBar(val, color)}
         </div>
       ))}
 
+      {/* Mobile compact: just 3 numbers */}
+      {isMobile && [
+        { label: 'CPU', val: vitals.cpu, color: cpuC },
+        { label: 'MEM', val: vitals.mem, color: memC },
+        { label: 'NET', val: vitals.net, color: netC },
+      ].map(({ label, val, color }) => (
+        <span key={label} style={{ fontFamily: '"Courier New",monospace', fontSize: 8, color, letterSpacing: '0.05em' }}>
+          {label}:{Math.round(val)}%
+        </span>
+      ))}
+
       {/* Threat badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: isMobile ? 0 : 4 }}>
         <span style={{
-          width:      5, height: 5, borderRadius: '50%',
-          background: tc,
-          boxShadow:  `0 0 6px ${tc}`,
-          flexShrink: 0,
-          animation:  crit ? 'delete-warning-pulse 0.55s ease-in-out infinite' : 'none',
+          width: 5, height: 5, borderRadius: '50%',
+          background: tc, boxShadow: `0 0 6px ${tc}`, flexShrink: 0,
+          animation: crit ? 'delete-warning-pulse 0.55s ease-in-out infinite' : 'none',
         }} />
         <span style={{
           fontFamily:    '"Courier New",monospace',
-          fontSize:      8,
+          fontSize:      isMobile ? 8 : 8,
           fontWeight:    'bold',
           color:         tc,
-          letterSpacing: '0.18em',
+          letterSpacing: '0.12em',
           transition:    'color 400ms',
           animation:     crit ? 'delete-warning-pulse 0.55s ease-in-out infinite' : 'none',
         }}>
-          THREAT:{vitals.threat}
+          {isMobile ? vitals.threat : `THREAT:${vitals.threat}`}
         </span>
       </div>
 
       <div style={{ flex: 1 }} />
 
-      <span style={{
-        fontFamily:    '"Courier New",monospace',
-        fontSize:      8,
-        color:         'rgba(168,85,247,0.28)',
-        letterSpacing: '0.10em',
-      }}>
+      <span style={{ fontFamily: '"Courier New",monospace', fontSize: 8, color: 'rgba(168,85,247,0.28)', letterSpacing: '0.08em' }}>
         {clock}
       </span>
     </div>

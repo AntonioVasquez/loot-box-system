@@ -73,6 +73,7 @@ export default function BoxCard({ item, onDelete, showDelete = false, isResult =
     <div
       ref={cardRef}
       onMouseEnter={onMouseEnter}
+      onTouchStart={() => onMouseEnter()}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       className={[

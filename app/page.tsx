@@ -277,14 +277,15 @@ export default function Home() {
       <HackerOverlay />
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="pt-10 pb-6 text-center relative z-10 w-full">
+      {/* pt-8 on mobile clears the ~24px vitals bar; pt-10 desktop */}
+      <header className="pt-8 md:pt-10 pb-4 md:pb-6 text-center relative z-10 w-full">
 
         {/* Decorative HUD lines */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         <div className="absolute top-1 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
 
-        {/* System ID badges */}
-        <div className="flex justify-between items-center px-6 mb-6 opacity-40">
+        {/* System ID badges — hidden on mobile to save vertical space */}
+        <div className="hidden sm:flex justify-between items-center px-6 mb-4 opacity-40">
           <span className="font-mono text-[9px] tracking-[0.25em] text-primary uppercase">SYS-LOOTBOX v2.0</span>
           <span className="font-mono text-[9px] tracking-[0.25em] text-cyan-500 uppercase animate-data-blink">● ONLINE</span>
           <span className="font-mono text-[9px] tracking-[0.25em] text-primary uppercase">NEXUS-ENGINE</span>
@@ -365,7 +366,7 @@ export default function Home() {
       </header>
 
       {/* ── Main ───────────────────────────────────────────────── */}
-      <main className="flex-grow container mx-auto px-4 pb-14 max-w-7xl pt-6">
+      <main className="flex-grow container mx-auto px-3 sm:px-4 pb-14 max-w-7xl pt-4 sm:pt-6">
 
         {/* Edit form */}
         {editingList ? (

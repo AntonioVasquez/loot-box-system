@@ -29,9 +29,17 @@ export default function BoxOpener({
   const [rouletteItems, setRouletteItems] = useState<BoxItem[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const tickAudios = useRef<HTMLAudioElement[]>([]);
   const nextTick = useRef(0);
   const revealAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     setResult(null); setRouletteItems([]);
@@ -66,7 +74,11 @@ export default function BoxOpener({
 
   const drawnSet = new Set(persistedDrawnIds);
   const availableItems = removeItemsFromList ? items.filter(i => !drawnSet.has(i.id)) : items;
-  const CARD_W = 200, CARD_GAP = 16, WINNER_IDX = 45, TOTAL = 60;
+  /* Responsive card dimensions */
+  const CARD_W   = isMobile ? 148 : 200;
+  const CARD_H   = isMobile ? 220 : 300;
+  const CARD_GAP = isMobile ? 10  : 16;
+  const WINNER_IDX = 45, TOTAL = 60;
 
   const openBox = () => {
     if (!availableItems.length || isOpening) return;
@@ -114,6 +126,7 @@ export default function BoxOpener({
 
   const isGameOver = !availableItems.length;
   const offset = WINNER_IDX * (CARD_W + CARD_GAP) + CARD_W / 2;
+  const rouletteH = isMobile ? 'h-[248px]' : 'h-[420px]';
   const translateTarget = isSpinning ? `-${offset}px` : '0px';
   const drawnPct = items.length > 0 ? Math.round((persistedDrawnIds.length / items.length) * 100) : 0;
 
@@ -205,7 +218,7 @@ export default function BoxOpener({
         </div>
 
         {/* Roulette viewport */}
-        <div className="relative h-[420px] flex items-center justify-center overflow-hidden rounded-2xl border border-white/5"
+        <div className={`relative ${rouletteH} flex items-center justify-center overflow-hidden rounded-2xl border border-white/5`}
           style={{ background: 'linear-gradient(145deg, #05031a 0%, #08061f 100%)' }}>
 
           {/* Dot grid background */}
@@ -235,7 +248,7 @@ export default function BoxOpener({
                 return (
                   <div key={idx} className="relative shrink-0 rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all duration-300"
                     style={{
-                      width: CARD_W, height: CARD_W + 100,
+                      width: CARD_W, height: CARD_H,
                       background: 'linear-gradient(145deg, #0f0c28 0%, #080618 100%)',
                       border: `1px solid ${rc.color}30`,
                       boxShadow: idx === WINNER_IDX && !isSpinning ? `0 0 40px ${rc.color}70` : `0 4px 20px rgba(0,0,0,0.5)`,

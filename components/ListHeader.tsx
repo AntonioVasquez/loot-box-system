@@ -67,25 +67,25 @@ export default function ListHeader({ list, onEdit }: ListHeaderProps) {
         </div>
 
         {/* Right: stats */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Stat: items */}
-          <div className="relative group flex flex-col items-center justify-center px-5 py-4 rounded-xl border border-secondary/20 bg-secondary/5 hover:border-secondary/40 transition-all min-w-[90px]">
-            <div className="text-[8px] font-mono text-gray-600 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1">
-              <span className="material-icons-outlined" style={{ fontSize: '9px' }}>inventory_2</span>
+          <div className="flex flex-col items-center justify-center px-3 sm:px-5 py-2 sm:py-4 rounded-xl border border-secondary/20 bg-secondary/5 min-w-[60px] sm:min-w-[90px]">
+            <div className="text-[7px] sm:text-[8px] font-mono text-gray-600 uppercase tracking-[0.15em] mb-1 flex items-center gap-1">
+              <span className="material-icons-outlined hidden sm:inline" style={{ fontSize: '9px' }}>inventory_2</span>
               Cajas
             </div>
-            <div className="text-3xl font-display font-black text-secondary" style={{ textShadow: '0 0 20px rgba(59,130,246,0.5)' }}>
+            <div className="text-xl sm:text-3xl font-display font-black text-secondary" style={{ textShadow: '0 0 20px rgba(59,130,246,0.5)' }}>
               {list.items.length}
             </div>
           </div>
 
           {/* Stat: opens */}
-          <div className="relative group flex flex-col items-center justify-center px-5 py-4 rounded-xl border border-primary/20 bg-primary/5 hover:border-primary/40 transition-all min-w-[90px]">
-            <div className="text-[8px] font-mono text-gray-600 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1">
-              <span className="material-icons-outlined" style={{ fontSize: '9px' }}>auto_awesome</span>
+          <div className="flex flex-col items-center justify-center px-3 sm:px-5 py-2 sm:py-4 rounded-xl border border-primary/20 bg-primary/5 min-w-[60px] sm:min-w-[90px]">
+            <div className="text-[7px] sm:text-[8px] font-mono text-gray-600 uppercase tracking-[0.15em] mb-1 flex items-center gap-1">
+              <span className="material-icons-outlined hidden sm:inline" style={{ fontSize: '9px' }}>auto_awesome</span>
               Abiertos
             </div>
-            <div className="text-3xl font-display font-black text-primary" style={{ textShadow: '0 0 20px rgba(168,85,247,0.5)' }}>
+            <div className="text-xl sm:text-3xl font-display font-black text-primary" style={{ textShadow: '0 0 20px rgba(168,85,247,0.5)' }}>
               {list.totalOpens}
             </div>
           </div>
@@ -93,10 +93,10 @@ export default function ListHeader({ list, onEdit }: ListHeaderProps) {
           {/* Edit button */}
           {onEdit && (
             <button onClick={onEdit}
-              className="flex flex-col items-center justify-center px-4 py-4 rounded-xl border border-white/6 text-gray-600 hover:text-white hover:border-primary/30 hover:bg-primary/5 transition-all group min-w-[52px]"
+              className="flex flex-col items-center justify-center px-3 sm:px-4 py-2 sm:py-4 rounded-xl border border-white/6 text-gray-600 hover:text-white hover:border-primary/30 hover:bg-primary/5 transition-all group"
               title="Editar">
-              <span className="material-icons-outlined text-xl group-hover:text-primary transition-colors">edit</span>
-              <span className="text-[8px] font-mono mt-1 tracking-widest uppercase">Edit</span>
+              <span className="material-icons-outlined text-base sm:text-xl group-hover:text-primary transition-colors">edit</span>
+              <span className="hidden sm:block text-[8px] font-mono mt-1 tracking-widest uppercase">Edit</span>
             </button>
           )}
         </div>

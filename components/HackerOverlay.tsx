@@ -524,13 +524,22 @@ export default function HackerOverlay() {
     const vh = window.innerHeight;
 
     /* Positions spread around edges — avoid center where hacker image is */
-    const POSITIONS = [
-      { x: 12,          y: 90          },   // top-left
-      { x: vw - 330,    y: 90          },   // top-right
-      { x: 12,          y: vh - 230    },   // bottom-left
-      { x: vw - 330,    y: vh - 230    },   // bottom-right
-      { x: 12,          y: vh / 2 - 90 },   // mid-left
-      { x: vw - 330,    y: vh / 2 - 90 },   // mid-right
+    const TW      = 308;                              // terminal popup width
+    const margin  = 10;
+    const safeX   = Math.max(margin, vw - TW - margin); // clamp right edge
+    const mobile  = vw < 768;
+    /* On mobile: only left side (right side would overlap center content) */
+    const POSITIONS = mobile ? [
+      { x: margin, y: 90          },
+      { x: margin, y: vh - 230    },
+      { x: margin, y: vh / 2 - 90 },
+    ] : [
+      { x: margin,  y: 90          },
+      { x: safeX,   y: 90          },
+      { x: margin,  y: vh - 230    },
+      { x: safeX,   y: vh - 230    },
+      { x: margin,  y: vh / 2 - 90 },
+      { x: safeX,   y: vh / 2 - 90 },
     ];
 
     const spawnTerminal = () => {
@@ -620,9 +629,9 @@ export default function HackerOverlay() {
       <div
         style={{
           position:      'fixed',
-          top:           '20px',
-          left:          '20px',
-          width:         '380px',
+          top:           '28px',   /* below vitals bar (~24px) */
+          left:          '8px',
+          width:         'min(360px, calc(100vw - 16px))',
           zIndex:        1,
           pointerEvents: 'none',
         }}
